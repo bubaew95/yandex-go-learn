@@ -39,10 +39,10 @@ func run() error {
 		res.Header().Set("content-type", "text/plain")
 		res.Header().Set("content-length", "30")
 
-		genId := RandStringBytes(8)
-		urls[genId] = body
+		genID := RandStringBytes(8)
+		urls[genID] = body
 
-		url := fmt.Sprintf("%s:%s/%s", DOMAIN, PORT, genId)
+		url := fmt.Sprintf("%s:%s/%s", DOMAIN, PORT, genID)
 		res.Write([]byte(url))
 	})
 
