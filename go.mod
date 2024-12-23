@@ -1,3 +1,3 @@
 module github.com/bubaew95/yandex-go-learn
 
-go 1.23.4
+go 1.22.10
