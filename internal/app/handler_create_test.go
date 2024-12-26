@@ -1,12 +1,12 @@
 package app
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -39,19 +39,24 @@ func TestHandlerCreate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(http.MethodPost, "/", nil)
 			w := httptest.NewRecorder()
+			w.Header().Set("content-type", "text/plain")
 
 			urls := make(map[string]string)
-			h := http.HandlerFunc(CreateURL(urls))
-			h(w, request)
+			handler := http.HandlerFunc(CreateURL(urls))
+			handler(w, request)
 
 			result := w.Result()
+
+			assert.Equal(t, tt.want.statusCode, result.StatusCode)
+			assert.Equal(t, tt.want.contentType, result.Header.Get("content-type"))
+
 			data, err := io.ReadAll(result.Body)
 			require.NoError(t, err, "Ошибка получения данных")
 
 			err = result.Body.Close()
 			require.NoError(t, err, "Ошибка закрытия подключения")
 
-			fmt.Println(data)
+			assert.NotEmpty(t, data)
 		})
 	}
 

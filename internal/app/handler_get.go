@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"net/http"
 )
 
@@ -19,7 +18,7 @@ func GetURL(urls map[string]string) http.HandlerFunc {
 			res.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		fmt.Println(url)
+
 		res.Header().Set("Location", url)
 		res.WriteHeader(http.StatusTemporaryRedirect)
 	}
