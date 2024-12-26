@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestHandlerGet(t *testing.T) {
@@ -64,6 +65,9 @@ func TestHandlerGet(t *testing.T) {
 			handler(w, request)
 
 			result := w.Result()
+
+			err := result.Body.Close()
+			require.NoError(t, err, "Ошибка закрытия подключения")
 
 			assert.Equal(t, tt.want.statusCode, result.StatusCode)
 			assert.Equal(t, tt.want.contentType, result.Header.Get("content-type"))
