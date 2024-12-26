@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func GetUrl(urls map[string]string) http.HandlerFunc {
+func GetURL(urls map[string]string) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		if http.MethodGet != req.Method {
 			res.WriteHeader(http.StatusBadRequest)

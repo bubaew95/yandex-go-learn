@@ -8,7 +8,7 @@ import (
 	"github.com/bubaew95/yandex-go-learn/internal/utils"
 )
 
-func CreateUrl(urls map[string]string) http.HandlerFunc {
+func CreateURL(urls map[string]string) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		if http.MethodPost != req.Method {
 			res.WriteHeader(http.StatusBadRequest)

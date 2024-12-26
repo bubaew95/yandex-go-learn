@@ -41,12 +41,15 @@ func TestHandlerCreate(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			urls := make(map[string]string)
-			h := http.HandlerFunc(CreateUrl(urls))
+			h := http.HandlerFunc(CreateURL(urls))
 			h(w, request)
 
 			result := w.Result()
 			data, err := io.ReadAll(result.Body)
 			require.NoError(t, err, "Ошибка получения данных")
+
+			err = result.Body.Close()
+			require.NoError(t, err, "Ошибка закрытия подключения")
 
 			fmt.Println(data)
 		})

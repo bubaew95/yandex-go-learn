@@ -16,8 +16,8 @@ func run() error {
 	urls := make(map[string]string)
 
 	mux := http.NewServeMux()
-	mux.HandleFunc(`/`, app.CreateUrl(urls))
-	mux.HandleFunc(`/{id}`, app.GetUrl(urls))
+	mux.HandleFunc(`/`, app.CreateURL(urls))
+	mux.HandleFunc(`/{id}`, app.GetURL(urls))
 
 	return http.ListenAndServe(`:8080`, mux)
 }
