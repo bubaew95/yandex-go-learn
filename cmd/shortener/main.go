@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/bubaew95/yandex-go-learn/internal/app"
-	"github.com/bubaew95/yandex-go-learn/internal/config"
 )
 
 func main() {
@@ -20,5 +19,5 @@ func run() error {
 	mux.HandleFunc(`/`, app.CreateUrl(urls))
 	mux.HandleFunc(`/{id}`, app.GetUrl(urls))
 
-	return http.ListenAndServe(`:`+config.Port, mux)
+	return http.ListenAndServe(`:8080`, mux)
 }
