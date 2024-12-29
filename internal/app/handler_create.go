@@ -17,6 +17,11 @@ func CreateURL(urls map[string]string) http.HandlerFunc {
 		}
 
 		body := string(responseData)
+		if body == "" {
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
 		res.WriteHeader(http.StatusCreated)
 		res.Header().Set("content-type", "text/plain")
 		res.Header().Set("content-length", "30")

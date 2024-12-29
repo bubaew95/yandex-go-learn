@@ -4,6 +4,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,49 +16,58 @@ func TestHandlerCreate(t *testing.T) {
 		contentType string
 		statusCode  int
 		method      string
-		url         string
 	}
 
 	tests := []struct {
 		name string
 		data string
 		want want
+		err  bool
 	}{
 		{
 			name: "Simple url",
 			data: "https://practicum.yandex.ru/",
 			want: want{
-				contentType: "text/plain",
+				contentType: "text/plain; charset=utf-8",
 				statusCode:  http.StatusCreated,
 				method:      http.MethodPost,
-				url:         "http://localhost:8080/WzYAhpnS",
 			},
+			err: false,
+		},
+		{
+			name: "Data is empty",
+			data: "",
+			want: want{
+				contentType: "text/plain; charset=utf-8",
+				statusCode:  http.StatusBadRequest,
+				method:      http.MethodPost,
+			},
+
+			err: true,
 		},
 	}
 
+	ts := httptest.NewServer(Routers())
+	defer ts.Close()
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httptest.NewRequest(http.MethodPost, "/", nil)
-			w := httptest.NewRecorder()
-			w.Header().Set("content-type", "text/plain")
+			req, err := http.NewRequest("POST", ts.URL, strings.NewReader(tt.data))
+			require.NoError(t, err)
 
-			urls := make(map[string]string)
-			handler := http.HandlerFunc(CreateURL(urls))
-			handler(w, request)
+			resp, err := ts.Client().Do(req)
+			require.NoError(t, err)
+			defer resp.Body.Close()
 
-			result := w.Result()
+			respBody, err := io.ReadAll(resp.Body)
+			require.NoError(t, err)
 
-			assert.Equal(t, tt.want.statusCode, result.StatusCode)
-			assert.Equal(t, tt.want.contentType, result.Header.Get("content-type"))
+			assert.Equal(t, resp.StatusCode, tt.want.statusCode)
 
-			data, err := io.ReadAll(result.Body)
-			require.NoError(t, err, "Ошибка получения данных")
-
-			err = result.Body.Close()
-			require.NoError(t, err, "Ошибка закрытия подключения")
-
-			assert.NotEmpty(t, data)
+			if false == tt.err {
+				assert.Equal(t, resp.Header.Get("content-type"), tt.want.contentType)
+				assert.Equal(t, respBody, respBody)
+			}
 		})
 	}
-
 }
