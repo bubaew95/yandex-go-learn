@@ -2,16 +2,13 @@ package app
 
 import (
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
 )
 
 func GetURL(urls map[string]string) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
-		if http.MethodGet != req.Method {
-			res.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		id := req.PathValue(`id`)
+		id := chi.URLParam(req, `id`)
 
 		url, ok := urls[id]
 		if !ok {

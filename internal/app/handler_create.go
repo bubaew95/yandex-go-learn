@@ -10,11 +10,6 @@ import (
 
 func CreateURL(urls map[string]string) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
-		if http.MethodPost != req.Method {
-			res.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
 		responseData, err := io.ReadAll(req.Body)
 		if err != nil {
 			res.WriteHeader(http.StatusBadRequest)
@@ -22,10 +17,9 @@ func CreateURL(urls map[string]string) http.HandlerFunc {
 		}
 
 		body := string(responseData)
-
 		res.WriteHeader(http.StatusCreated)
 		res.Header().Set("content-type", "text/plain")
-		res.Header().Set("content-length", "30")
+		res.Header().Set("content-length", string(len(responseData)))
 
 		genID := utils.RandStringBytes(8)
 		urls[genID] = body
