@@ -19,7 +19,7 @@ func CreateURL(urls map[string]string) http.HandlerFunc {
 		body := string(responseData)
 		res.WriteHeader(http.StatusCreated)
 		res.Header().Set("content-type", "text/plain")
-		res.Header().Set("content-length", string(len(responseData)))
+		res.Header().Set("content-length", "30")
 
 		genID := utils.RandStringBytes(8)
 		urls[genID] = body
