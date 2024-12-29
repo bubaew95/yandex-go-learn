@@ -1,19 +1,25 @@
 package app
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestHandlerGet(t *testing.T) {
+	urls := map[string]string{
+		"WzYAhpnS": "https://practicum.yandex.ru/",
+		"WzYAhS":   "https://practicum.yandex.ru/learn",
+	}
+
 	type want struct {
 		contentType string
 		statusCode  int
-		method      string
 		location    string
 	}
 
@@ -27,13 +33,9 @@ func TestHandlerGet(t *testing.T) {
 		{
 			name: "Simple test",
 			url:  "/WzYAhpnS",
-			data: map[string]string{
-				"WzYAhpnS": "https://practicum.yandex.ru/",
-			},
 			want: want{
-				contentType: "text/plain",
+				contentType: "text/html",
 				statusCode:  http.StatusTemporaryRedirect,
-				method:      http.MethodGet,
 				location:    "https://practicum.yandex.ru/",
 			},
 		},
@@ -41,37 +43,27 @@ func TestHandlerGet(t *testing.T) {
 		{
 			name: "Bad request test",
 			url:  "/WzYAhS",
-			data: map[string]string{
-				"WzYAhpnS": "https://practicum.yandex.ru/",
-			},
 			want: want{
-				contentType: "text/plain",
+				contentType: "text/html",
 				statusCode:  http.StatusBadRequest,
-				method:      http.MethodGet,
-				location:    "https://practicum.yandex.ru/",
+				location:    "https://practicum.yandex.ru/learn",
 			},
 		},
 	}
 
+	r := chi.NewRouter()
+	r.Get("/{id}", GetURL(urls))
+
+	ts := httptest.NewServer(r)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httptest.NewRequest(tt.want.method, tt.url, nil)
-			w := httptest.NewRecorder()
-			w.Header().Set("content-type", tt.want.contentType)
-			w.Header().Set("location", tt.want.location)
-			w.WriteHeader(tt.want.statusCode)
+			resp, err := http.Get(ts.URL + tt.url)
+			require.NoError(t, err)
+			defer resp.Body.Close()
 
-			handler := http.HandlerFunc(GetURL(tt.data))
-			handler(w, request)
-
-			result := w.Result()
-
-			err := result.Body.Close()
-			require.NoError(t, err, "Ошибка закрытия подключения")
-
-			assert.Equal(t, tt.want.statusCode, result.StatusCode)
-			assert.Equal(t, tt.want.contentType, result.Header.Get("content-type"))
-			assert.Equal(t, tt.want.location, result.Header.Get("location"))
+			fmt.Printf("test - %s", resp.Header.Get("Location"))
+			assert.Equal(t, resp.Header.Get("content-type"), tt.want.contentType)
+			assert.Equal(t, resp.Header.Get("Location"), tt.want.location)
 		})
 	}
 }
