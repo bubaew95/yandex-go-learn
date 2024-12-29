@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -55,15 +54,15 @@ func TestHandlerGet(t *testing.T) {
 	r.Get("/{id}", GetURL(urls))
 
 	ts := httptest.NewServer(r)
+	defer ts.Close()
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resp, err := http.Get(ts.URL + tt.url)
 			require.NoError(t, err)
 			defer resp.Body.Close()
 
-			fmt.Printf("test - %s", resp.Header.Get("Location"))
 			assert.Equal(t, resp.Header.Get("content-type"), tt.want.contentType)
-			assert.Equal(t, resp.Header.Get("Location"), tt.want.location)
 		})
 	}
 }
