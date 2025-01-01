@@ -1,21 +1,17 @@
 package app
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-chi/chi/v5"
+	"github.com/bubaew95/yandex-go-learn/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestHandlerGet(t *testing.T) {
-	urls := map[string]string{
-		"WzYAhpnS": "https://practicum.yandex.ru/",
-		"WzYAhS":   "https://practicum.yandex.ru/learn",
-	}
-
 	type want struct {
 		contentType string
 		statusCode  int
@@ -50,10 +46,17 @@ func TestHandlerGet(t *testing.T) {
 		},
 	}
 
-	r := chi.NewRouter()
-	r.Get("/{id}", GetURL(urls))
+	cfg := config.NewTestConfig([]string{"-a", ":8081", "-b", "http://test.local"})
+	app := NewApp(cfg)
+	app.Routers()
+	fmt.Print(cfg)
 
-	ts := httptest.NewServer(r)
+	app.URLs = map[string]string{
+		"WzYAhpnS": "https://practicum.yandex.ru/",
+		"WzYAhS":   "https://practicum.yandex.ru/learn",
+	}
+
+	ts := httptest.NewServer(&app.Router)
 	defer ts.Close()
 
 	for _, tt := range tests {

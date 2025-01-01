@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bubaew95/yandex-go-learn/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -47,7 +48,11 @@ func TestHandlerCreate(t *testing.T) {
 		},
 	}
 
-	ts := httptest.NewServer(Routers())
+	cfg := config.NewConfig()
+	app := NewApp(cfg)
+	app.Routers()
+
+	ts := httptest.NewServer(&app.Router)
 	defer ts.Close()
 
 	for _, tt := range tests {
