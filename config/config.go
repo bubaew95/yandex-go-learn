@@ -2,6 +2,7 @@ package config
 
 import (
 	"flag"
+	"fmt"
 )
 
 type Config struct {
@@ -10,10 +11,14 @@ type Config struct {
 }
 
 func NewConfig() *Config {
-	port := flag.String("a", "8080", "отвечает за адрес запуска HTTP-сервера")
-	baseURL := flag.String("b", "http://localhost", " отвечает за базовый адрес результирующего сокращённого URL")
+	port := flag.String("a", ":8080", "отвечает за адрес запуска HTTP-сервера")
+	baseURL := flag.String("b", "", " отвечает за базовый адрес результирующего сокращённого URL")
 
 	flag.Parse()
+
+	if *baseURL == "" {
+		*baseURL = fmt.Sprintf("http://localhost%s", *port)
+	}
 
 	return &Config{
 		Port:    *port,
@@ -24,7 +29,7 @@ func NewConfig() *Config {
 func NewTestConfig(args []string) *Config {
 	fs := flag.NewFlagSet("test", flag.ContinueOnError)
 
-	port := fs.String("a", "8080", "Адрес запуска HTTP-сервера")
+	port := fs.String("a", ":8080", "Адрес запуска HTTP-сервера")
 	baseURL := fs.String("b", "http://localhost", "Базовый адрес результирующего сокращённого URL")
 
 	_ = fs.Parse(args)
