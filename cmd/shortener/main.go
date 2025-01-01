@@ -22,5 +22,5 @@ func main() {
 func run(cfg *config.Config, app *app.App) error {
 	fmt.Printf("Run server on port %s", cfg.Port)
 
-	return http.ListenAndServe(fmt.Sprintf(":%s", cfg.Port), &app.Router)
+	return http.ListenAndServe(cfg.Port, &app.Router)
 }
