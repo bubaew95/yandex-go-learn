@@ -21,8 +21,8 @@ func NewConfig() *Config {
 		*port = envServerAddr
 	}
 
-	if envBaseUrl := os.Getenv("BASE_URL"); envBaseUrl != "" {
-		*baseURL = envBaseUrl
+	if envBaseURL := os.Getenv("BASE_URL"); envBaseURL != "" {
+		*baseURL = envBaseURL
 	}
 
 	if *baseURL == "" {
