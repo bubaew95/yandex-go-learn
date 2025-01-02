@@ -3,6 +3,7 @@ package config
 import (
 	"flag"
 	"fmt"
+	"os"
 )
 
 type Config struct {
@@ -15,6 +16,14 @@ func NewConfig() *Config {
 	baseURL := flag.String("b", "", " отвечает за базовый адрес результирующего сокращённого URL")
 
 	flag.Parse()
+
+	if envServerAddr := os.Getenv("SERVER_ADDRESS"); envServerAddr != "" {
+		*port = envServerAddr
+	}
+
+	if envBaseUrl := os.Getenv("BASE_URL"); envBaseUrl != "" {
+		*baseURL = envBaseUrl
+	}
 
 	if *baseURL == "" {
 		*baseURL = fmt.Sprintf("http://localhost%s", *port)
