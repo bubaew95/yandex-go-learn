@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/bubaew95/yandex-go-learn/internal/utils"
 )
@@ -23,18 +24,18 @@ func (app *App) CreateURL(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	genID := generateId(app.URLs)
+	genID := generateID(app.URLs)
 	app.URLs[genID] = body
 	url := fmt.Sprintf("%s/%s", app.Config.BaseURL, genID)
 
 	res.WriteHeader(http.StatusCreated)
 	res.Header().Set("content-type", "text/plain")
-	res.Header().Set("content-length", string(len(url)))
+	res.Header().Set("content-length", strconv.Itoa(len(url)))
 
 	res.Write([]byte(url))
 }
 
-func generateId(urls map[string]string) string {
+func generateID(urls map[string]string) string {
 	var genID string
 	for {
 		genID = utils.RandStringBytes(randomStringLength)
