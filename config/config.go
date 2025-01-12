@@ -34,17 +34,3 @@ func NewConfig() *Config {
 		BaseURL: *baseURL,
 	}
 }
-
-func NewTestConfig(args []string) *Config {
-	fs := flag.NewFlagSet("test", flag.ContinueOnError)
-
-	port := fs.String("a", ":8080", "Адрес запуска HTTP-сервера")
-	baseURL := fs.String("b", "http://localhost", "Базовый адрес результирующего сокращённого URL")
-
-	_ = fs.Parse(args)
-
-	return &Config{
-		Port:    *port,
-		BaseURL: *baseURL,
-	}
-}

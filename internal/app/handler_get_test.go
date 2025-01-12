@@ -1,6 +1,7 @@
 package app
 
 import (
+	"flag"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -46,7 +47,7 @@ func TestHandlerGet(t *testing.T) {
 		},
 	}
 
-	cfg := config.NewTestConfig([]string{"-a", ":8081", "-b", "http://test.local"})
+	cfg := testConfig([]string{"-a", ":8081", "-b", "http://test.local"})
 	app := NewApp(cfg)
 	app.Routers()
 	fmt.Print(cfg)
@@ -67,5 +68,19 @@ func TestHandlerGet(t *testing.T) {
 
 			assert.Equal(t, resp.Header.Get("content-type"), tt.want.contentType)
 		})
+	}
+}
+
+func testConfig(args []string) *config.Config {
+	fs := flag.NewFlagSet("test", flag.ContinueOnError)
+
+	port := fs.String("a", ":8080", "Адрес запуска HTTP-сервера")
+	baseURL := fs.String("b", "http://localhost", "Базовый адрес результирующего сокращённого URL")
+
+	_ = fs.Parse(args)
+
+	return &config.Config{
+		Port:    *port,
+		BaseURL: *baseURL,
 	}
 }
