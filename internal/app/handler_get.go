@@ -11,7 +11,7 @@ func (app *App) GetURL(res http.ResponseWriter, req *http.Request) {
 
 	url, ok := app.URLs[id]
 	if !ok {
-		res.WriteHeader(http.StatusBadRequest)
+		res.WriteHeader(http.StatusNotFound)
 		return
 	}
 
