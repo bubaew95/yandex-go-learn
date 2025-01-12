@@ -8,6 +8,8 @@ import (
 	"github.com/bubaew95/yandex-go-learn/internal/utils"
 )
 
+const randomStringLength = 8
+
 func (app *App) CreateURL(res http.ResponseWriter, req *http.Request) {
 	responseData, err := io.ReadAll(req.Body)
 	if err != nil {
@@ -21,7 +23,7 @@ func (app *App) CreateURL(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	genID := utils.RandStringBytes(8)
+	genID := generateId(app.URLs)
 	app.URLs[genID] = body
 	url := fmt.Sprintf("%s/%s", app.Config.BaseURL, genID)
 
@@ -30,4 +32,16 @@ func (app *App) CreateURL(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("content-length", string(len(url)))
 
 	res.Write([]byte(url))
+}
+
+func generateId(urls map[string]string) string {
+	var genID string
+	for {
+		genID = utils.RandStringBytes(randomStringLength)
+		if _, exists := urls[genID]; !exists {
+			break
+		}
+	}
+
+	return genID
 }
