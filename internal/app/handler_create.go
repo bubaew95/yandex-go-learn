@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/bubaew95/yandex-go-learn/internal/utils"
 )
@@ -24,7 +25,13 @@ func (app *App) CreateURL(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	genID := generateID(app.URLs)
+	var mutex sync.Mutex
+	ch := make(chan string)
+
+	go generateID(app.URLs, &mutex, ch)
+
+	genID := <-ch
+
 	app.URLs[genID] = body
 	url := fmt.Sprintf("%s/%s", app.Config.BaseURL, genID)
 
@@ -35,14 +42,18 @@ func (app *App) CreateURL(res http.ResponseWriter, req *http.Request) {
 	res.Write([]byte(url))
 }
 
-func generateID(urls map[string]string) string {
+func generateID(urls map[string]string, mutex *sync.Mutex, ch chan string) {
 	var genID string
 	for {
 		genID = utils.RandStringBytes(randomStringLength)
+
+		mutex.Lock()
 		if _, exists := urls[genID]; !exists {
+			urls[genID] = ""
+			mutex.Unlock()
 			break
 		}
+		mutex.Unlock()
 	}
-
-	return genID
+	ch <- genID
 }
