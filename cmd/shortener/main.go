@@ -6,7 +6,7 @@ import (
 
 	"github.com/bubaew95/yandex-go-learn/config"
 	"github.com/bubaew95/yandex-go-learn/internal/app"
-	"github.com/bubaew95/yandex-go-learn/internal/service"
+	"github.com/bubaew95/yandex-go-learn/internal/logger"
 )
 
 func main() {
@@ -21,7 +21,7 @@ func main() {
 }
 
 func run(cfg *config.Config, app *app.App) error {
-	if err := service.Initialize(); err != nil {
+	if err := logger.Initialize(); err != nil {
 		return err
 	}
 
