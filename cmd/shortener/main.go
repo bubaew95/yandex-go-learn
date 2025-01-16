@@ -6,6 +6,7 @@ import (
 
 	"github.com/bubaew95/yandex-go-learn/config"
 	"github.com/bubaew95/yandex-go-learn/internal/app"
+	"github.com/bubaew95/yandex-go-learn/internal/service"
 )
 
 func main() {
@@ -20,6 +21,10 @@ func main() {
 }
 
 func run(cfg *config.Config, app *app.App) error {
+	if err := service.Initialize(); err != nil {
+		return err
+	}
+
 	fmt.Printf("Run server on port %s", cfg.Port)
 
 	return http.ListenAndServe(cfg.Port, &app.Router)
