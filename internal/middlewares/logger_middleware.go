@@ -53,7 +53,7 @@ func LoggerMiddleware(h http.Handler) http.Handler {
 		logger.Log.Info("HTTP request&response",
 			zap.String("uri", r.RequestURI),
 			zap.String("method", r.Method),
-			zap.String("duration", string(duration)),
+			zap.Duration("duration", duration),
 			zap.Int("status", responseData.status),
 			zap.Int("size", responseData.size),
 		)
