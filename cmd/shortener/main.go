@@ -1,31 +1,43 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/bubaew95/yandex-go-learn/config"
-	"github.com/bubaew95/yandex-go-learn/internal/app"
+	"github.com/bubaew95/yandex-go-learn/internal/handlers"
 	"github.com/bubaew95/yandex-go-learn/internal/logger"
+	"github.com/bubaew95/yandex-go-learn/internal/middlewares"
+	"github.com/bubaew95/yandex-go-learn/internal/repository"
+	"github.com/bubaew95/yandex-go-learn/internal/service"
+	"github.com/go-chi/chi/v5"
+	"go.uber.org/zap"
 )
 
 func main() {
+	if err := logger.Initialize(); err != nil {
+		panic(err)
+	}
+
 	cfg := config.NewConfig()
-	appInstance := app.NewApp(cfg)
 
-	appInstance.Routers()
+	data := make(map[string]string)
 
-	if err := run(cfg, appInstance); err != nil {
+	shortenerRepository := repository.NewShortenerRepository(data, cfg.BaseURL)
+	shortenerService := service.NewShortenerService(shortenerRepository)
+	shortenerHandler := handlers.NewShortenerHandler(shortenerService)
+
+	route := chi.NewRouter()
+	route.Use(middlewares.LoggerMiddleware)
+	route.Post("/", shortenerHandler.CreateURL)
+	route.Get("/{id}", shortenerHandler.GetURL)
+
+	if err := run(cfg, route); err != nil {
 		panic(err)
 	}
 }
 
-func run(cfg *config.Config, app *app.App) error {
-	if err := logger.Initialize(); err != nil {
-		return err
-	}
+func run(cfg *config.Config, route *chi.Mux) error {
+	logger.Log.Info("Running server", zap.String("port", cfg.Port))
 
-	fmt.Printf("Run server on port %s", cfg.Port)
-
-	return http.ListenAndServe(cfg.Port, &app.Router)
+	return http.ListenAndServe(cfg.Port, route)
 }
