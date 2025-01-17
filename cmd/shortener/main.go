@@ -18,10 +18,9 @@ func main() {
 		panic(err)
 	}
 
-	cfg := config.NewConfig()
-
 	data := make(map[string]string)
 
+	cfg := config.NewConfig()
 	shortenerRepository := repository.NewShortenerRepository(data, cfg.BaseURL)
 	shortenerService := service.NewShortenerService(shortenerRepository)
 	shortenerHandler := handlers.NewShortenerHandler(shortenerService)

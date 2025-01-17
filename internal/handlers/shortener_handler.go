@@ -47,7 +47,7 @@ func (s ShortenerHandler) CreateURL(res http.ResponseWriter, req *http.Request) 
 func (s *ShortenerHandler) GetURL(res http.ResponseWriter, req *http.Request) {
 	id := chi.URLParam(req, "id")
 
-	url, ok := s.service.GetURLById(id)
+	url, ok := s.service.GetURLByID(id)
 	if !ok {
 		res.WriteHeader(http.StatusNotFound)
 		return

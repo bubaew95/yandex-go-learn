@@ -28,7 +28,7 @@ func (s *ShortenerService) GenerateID(url string, randomStringLength int) string
 	for {
 		genID = s.RandStringBytes(randomStringLength)
 
-		_, existsURL := s.repository.GetURLById(genID)
+		_, existsURL := s.repository.GetURLByID(genID)
 		if !existsURL {
 			s.repository.SetURL(genID, url)
 			break
@@ -54,6 +54,6 @@ func (s ShortenerService) GenerateResponseURL(id string) string {
 	return fmt.Sprintf("%s/%s", s.repository.GetBaseURL(), id)
 }
 
-func (s ShortenerService) GetURLById(id string) (string, bool) {
-	return s.repository.GetURLById(id)
+func (s ShortenerService) GetURLByID(id string) (string, bool) {
+	return s.repository.GetURLByID(id)
 }
