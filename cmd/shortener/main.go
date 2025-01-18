@@ -29,6 +29,7 @@ func main() {
 	route.Use(middlewares.LoggerMiddleware)
 	route.Post("/", shortenerHandler.CreateURL)
 	route.Get("/{id}", shortenerHandler.GetURL)
+	route.Post("/api/shorten", shortenerHandler.AddNewURL)
 
 	if err := run(cfg, route); err != nil {
 		panic(err)
