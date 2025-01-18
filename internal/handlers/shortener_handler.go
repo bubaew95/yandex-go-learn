@@ -75,9 +75,8 @@ func (s *ShortenerHandler) AddNewURL(res http.ResponseWriter, req *http.Request)
 	genID := s.service.GenerateID(requestBody.URL, randomStringLength)
 	url := s.service.GenerateResponseURL(genID)
 
+	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(http.StatusCreated)
-	res.Header().Set("Content-type", "application/json")
-	res.Header().Set("Content-length", strconv.Itoa(len(url)))
 
 	responseModel := models.ShortenerResponse{
 		Result: url,

@@ -152,9 +152,10 @@ func TestHandlerGet(t *testing.T) {
 
 func TestHandlerAddNewURLFromJson(t *testing.T) {
 	type want struct {
-		contentType string
-		method      string
-		status      int
+		contentType   string
+		contentLength string
+		method        string
+		status        int
 	}
 
 	tests := []struct {
@@ -166,9 +167,10 @@ func TestHandlerAddNewURLFromJson(t *testing.T) {
 			name: "Add new test from json",
 			data: `{ "url": "https://practicum.yandex.ru"}`,
 			want: want{
-				contentType: "application/json",
-				method:      http.MethodPost,
-				status:      http.StatusCreated,
+				contentLength: "40",
+				contentType:   "application/json",
+				method:        http.MethodPost,
+				status:        http.StatusCreated,
 			},
 		},
 	}
@@ -203,6 +205,8 @@ func TestHandlerAddNewURLFromJson(t *testing.T) {
 
 			assert.NotEmpty(t, responseModel.Result)
 			assert.Equal(t, resp.StatusCode, tt.want.status)
+			assert.Equal(t, resp.Header.Get("content-length"), tt.want.contentLength)
+			assert.Equal(t, resp.Header.Get("content-type"), tt.want.contentType)
 		})
 	}
 }
