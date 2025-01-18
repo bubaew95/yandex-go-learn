@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"bytes"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -8,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/bubaew95/yandex-go-learn/config"
+	"github.com/bubaew95/yandex-go-learn/internal/models"
 	"github.com/bubaew95/yandex-go-learn/internal/repository"
 	"github.com/bubaew95/yandex-go-learn/internal/service"
 	"github.com/go-chi/chi/v5"
@@ -143,6 +146,63 @@ func TestHandlerGet(t *testing.T) {
 			defer resp.Body.Close()
 
 			assert.Equal(t, resp.Header.Get("content-type"), tt.want.contentType)
+		})
+	}
+}
+
+func TestHandlerAddNewURLFromJson(t *testing.T) {
+	type want struct {
+		contentType string
+		method      string
+		status      int
+	}
+
+	tests := []struct {
+		name string
+		data string
+		want want
+	}{
+		{
+			name: "Add new test from json",
+			data: `{ "url": "https://practicum.yandex.ru"}`,
+			want: want{
+				contentType: "application/json",
+				method:      http.MethodPost,
+				status:      http.StatusCreated,
+			},
+		},
+	}
+
+	data := make(map[string]string)
+
+	shortenerRepository := repository.NewShortenerRepository(data, "http://test.local")
+	shortenerService := service.NewShortenerService(shortenerRepository)
+	shortenerHandler := NewShortenerHandler(shortenerService)
+
+	router := chi.NewRouter()
+	router.Post("/api/shorten", shortenerHandler.AddNewURL)
+
+	ts := httptest.NewServer(router)
+	defer ts.Close()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req, err := http.NewRequest(tt.want.method, ts.URL+"/api/shorten", bytes.NewBuffer([]byte(tt.data)))
+			require.NoError(t, err)
+
+			resp, err := ts.Client().Do(req)
+			require.NoError(t, err)
+			defer resp.Body.Close()
+
+			respBody, err := io.ReadAll(resp.Body)
+			require.NoError(t, err)
+
+			var responseModel models.ShortenerResponse
+			err = json.Unmarshal(respBody, &responseModel)
+			require.NoError(t, err)
+
+			assert.NotEmpty(t, responseModel.Result)
+			assert.Equal(t, resp.StatusCode, tt.want.status)
 		})
 	}
 }
