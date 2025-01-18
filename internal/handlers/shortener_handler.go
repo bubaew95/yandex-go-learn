@@ -72,7 +72,7 @@ func (s *ShortenerHandler) AddNewURL(res http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	genID := s.service.GenerateID(requestBody.Url, randomStringLength)
+	genID := s.service.GenerateID(requestBody.URL, randomStringLength)
 	url := s.service.GenerateResponseURL(genID)
 
 	res.WriteHeader(http.StatusCreated)
