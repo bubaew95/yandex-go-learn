@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -58,6 +59,8 @@ func (s *ShortenerHandler) GetURL(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusNotFound)
 		return
 	}
+
+	logger.Log.Info(fmt.Sprintf("Get Url by ID: %s", url))
 
 	res.Header().Set("Location", url)
 	res.WriteHeader(http.StatusTemporaryRedirect)
