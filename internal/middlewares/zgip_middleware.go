@@ -14,7 +14,7 @@ func GZipMiddleware(h http.Handler) http.Handler {
 
 		accessContentTypes := map[string]bool{
 			"application/json": true,
-			"text/plain":       true,
+			"text/html":        true,
 		}
 
 		contentType := r.Header.Get("content-type")
