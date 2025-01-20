@@ -12,15 +12,6 @@ func GZipMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ow := w
 
-		// accessContentTypes := map[string]bool{
-		// 	"application/json": true,
-		// 	"text/html":        true,
-		// }
-
-		// contentType := r.Header.Get("content-type")
-		// _, accessContentType := accessContentTypes[contentType]
-
-		// if accessContentType {
 		logger.Log.Info("accessContentTypes")
 		acceptEncoding := r.Header.Get("Accept-Encoding")
 		isSupportGZip := strings.Contains(acceptEncoding, "gzip")
@@ -46,7 +37,6 @@ func GZipMiddleware(h http.Handler) http.Handler {
 			r.Body = cr
 			defer cr.Close()
 		}
-		// }
 
 		h.ServeHTTP(ow, r)
 	})
