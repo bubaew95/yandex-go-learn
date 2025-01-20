@@ -5,4 +5,5 @@ type ShortenerServiceInterface interface {
 	RandStringBytes(n int) string
 	GenerateResponseURL(id string) string
 	GetURLByID(id string) (string, bool)
+	GetAllURL() map[string]string
 }

@@ -25,3 +25,7 @@ func (s ShortenerRepository) GetURLByID(id string) (string, bool) {
 func (s ShortenerRepository) GetBaseURL() string {
 	return s.baseURL
 }
+
+func (s ShortenerRepository) GetAllURL() map[string]string {
+	return s.data
+}

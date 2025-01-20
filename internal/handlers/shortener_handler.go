@@ -53,15 +53,12 @@ func (s ShortenerHandler) CreateURL(res http.ResponseWriter, req *http.Request) 
 func (s *ShortenerHandler) GetURL(res http.ResponseWriter, req *http.Request) {
 	id := chi.URLParam(req, "id")
 
-	head := ""
-
-	for key, values := range req.Header {
-		for _, value := range values {
-			head += fmt.Sprintf("%s: %s, ", key, value)
-		}
+	hs := ""
+	for k, it := range s.service.GetAllURL() {
+		hs += fmt.Sprintf("%s: %s ", k, it)
 	}
 
-	logger.Log.Info(fmt.Sprintf("HEaders %s", head))
+	logger.Log.Info(hs)
 	logger.Log.Info(fmt.Sprintf("URL ID: %s", id))
 
 	url, ok := s.service.GetURLByID(id)

@@ -57,3 +57,7 @@ func (s ShortenerService) GenerateResponseURL(id string) string {
 func (s ShortenerService) GetURLByID(id string) (string, bool) {
 	return s.repository.GetURLByID(id)
 }
+
+func (s ShortenerService) GetAllURL() map[string]string {
+	return s.repository.GetAllURL()
+}
