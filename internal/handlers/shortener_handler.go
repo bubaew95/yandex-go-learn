@@ -52,6 +52,7 @@ func (s ShortenerHandler) CreateURL(res http.ResponseWriter, req *http.Request) 
 
 func (s *ShortenerHandler) GetURL(res http.ResponseWriter, req *http.Request) {
 	id := chi.URLParam(req, "id")
+	logger.Log.Info(fmt.Sprintf("URL ID: %s", id))
 
 	url, ok := s.service.GetURLByID(id)
 	if !ok {
