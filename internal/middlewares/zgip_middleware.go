@@ -12,13 +12,13 @@ func GZipMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ow := w
 
-		accessContentTypes := map[string]bool{
-			"application/json": true,
-			"text/html":        true,
-		}
+		// accessContentTypes := map[string]bool{
+		// 	"application/json": true,
+		// 	"text/html":        true,
+		// }
 
-		contentType := r.Header.Get("content-type")
-		_, accessContentType := accessContentTypes[contentType]
+		// contentType := r.Header.Get("content-type")
+		// _, accessContentType := accessContentTypes[contentType]
 
 		// if accessContentType {
 		logger.Log.Info("accessContentTypes")
