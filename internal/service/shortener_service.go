@@ -5,17 +5,20 @@ import (
 	"math/rand"
 	"sync"
 
+	"github.com/bubaew95/yandex-go-learn/config"
 	"github.com/bubaew95/yandex-go-learn/internal/interfaces"
 )
 
 type ShortenerService struct {
 	repository interfaces.ShortenerRepositoryInterface
+	config     config.Config
 	mx         *sync.Mutex
 }
 
-func NewShortenerService(r interfaces.ShortenerRepositoryInterface) *ShortenerService {
+func NewShortenerService(r interfaces.ShortenerRepositoryInterface, cfg config.Config) *ShortenerService {
 	return &ShortenerService{
 		repository: r,
+		config:     cfg,
 		mx:         &sync.Mutex{},
 	}
 }
@@ -51,7 +54,7 @@ func (s ShortenerService) RandStringBytes(n int) string {
 }
 
 func (s ShortenerService) GenerateResponseURL(id string) string {
-	return fmt.Sprintf("%s/%s", s.repository.GetBaseURL(), id)
+	return fmt.Sprintf("%s/%s", s.config.BaseURL, id)
 }
 
 func (s ShortenerService) GetURLByID(id string) (string, bool) {

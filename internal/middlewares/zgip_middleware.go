@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/bubaew95/yandex-go-learn/internal/compresses"
+	"github.com/bubaew95/yandex-go-learn/internal/compresse"
 	"github.com/bubaew95/yandex-go-learn/internal/logger"
 )
 
@@ -18,7 +18,7 @@ func GZipMiddleware(h http.Handler) http.Handler {
 		if isSupportGZip {
 			logger.Log.Info("Accept-Encoding run")
 
-			cw := compresses.NewCompressWriter(w)
+			cw := compresse.NewCompressWriter(w)
 			ow = cw
 			defer cw.Close()
 		}
@@ -28,7 +28,7 @@ func GZipMiddleware(h http.Handler) http.Handler {
 		if isSendGZip {
 			logger.Log.Info("Content-Encoding run")
 
-			cr, err := compresses.NewCompressReader(r.Body)
+			cr, err := compresse.NewCompressReader(r.Body)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				return

@@ -1,31 +1,48 @@
 package repository
 
+import (
+	"fmt"
+
+	"github.com/bubaew95/yandex-go-learn/internal/logger"
+	"github.com/bubaew95/yandex-go-learn/internal/models"
+	"github.com/bubaew95/yandex-go-learn/internal/tools"
+)
+
 type ShortenerRepository struct {
-	data    map[string]string
-	baseURL string
+	shortenerDB tools.ShortenerDB
 }
 
-func NewShortenerRepository(data map[string]string, baseURL string) *ShortenerRepository {
+func NewShortenerRepository(s tools.ShortenerDB) *ShortenerRepository {
 	return &ShortenerRepository{
-		data:    data,
-		baseURL: baseURL,
+		shortenerDB: s,
 	}
 }
 
 func (s ShortenerRepository) SetURL(id string, url string) {
-	s.data[id] = url
+	data := &models.ShortenURL{
+		Uuid:        s.shortenerDB.Count() + 1,
+		ShortUrl:    id,
+		OriginalUrl: url,
+	}
+
+	err := s.shortenerDB.Save(data)
+	if err != nil {
+		logger.Log.Debug(fmt.Sprintf("Не удалось записать данные в файл. Ошибка: %s", err.Error()))
+	}
 }
 
 func (s ShortenerRepository) GetURLByID(id string) (string, bool) {
-	url, ok := s.data[id]
+	data, err := s.shortenerDB.Load()
+	if err != nil {
+		return "", false
+	}
 
+	url, ok := data[id]
 	return url, ok
 }
 
-func (s ShortenerRepository) GetBaseURL() string {
-	return s.baseURL
-}
-
 func (s ShortenerRepository) GetAllURL() map[string]string {
-	return s.data
+	data, _ := s.shortenerDB.Load()
+
+	return data
 }

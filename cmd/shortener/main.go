@@ -9,6 +9,7 @@ import (
 	"github.com/bubaew95/yandex-go-learn/internal/middlewares"
 	"github.com/bubaew95/yandex-go-learn/internal/repository"
 	"github.com/bubaew95/yandex-go-learn/internal/service"
+	"github.com/bubaew95/yandex-go-learn/internal/tools"
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 )
@@ -18,16 +19,17 @@ func main() {
 		panic(err)
 	}
 
-	data := make(map[string]string)
-
 	cfg := config.NewConfig()
-	shortenerRepository := repository.NewShortenerRepository(data, cfg.BaseURL)
-	shortenerService := service.NewShortenerService(shortenerRepository)
+	shortenerDB := tools.NewShortenerDB(*cfg)
+
+	shortenerRepository := repository.NewShortenerRepository(*shortenerDB)
+	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
 	shortenerHandler := handlers.NewShortenerHandler(shortenerService)
 
 	route := chi.NewRouter()
 	route.Use(middlewares.LoggerMiddleware)
 	route.Use(middlewares.GZipMiddleware)
+
 	route.Post("/", shortenerHandler.CreateURL)
 	route.Get("/{id}", shortenerHandler.GetURL)
 	route.Post("/api/shorten", shortenerHandler.AddNewURL)

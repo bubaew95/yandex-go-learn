@@ -13,6 +13,7 @@ import (
 	"github.com/bubaew95/yandex-go-learn/internal/models"
 	"github.com/bubaew95/yandex-go-learn/internal/repository"
 	"github.com/bubaew95/yandex-go-learn/internal/service"
+	"github.com/bubaew95/yandex-go-learn/internal/tools"
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -54,11 +55,11 @@ func TestHandlerCreate(t *testing.T) {
 		},
 	}
 
-	data := make(map[string]string)
-
 	cfg := config.NewConfig()
-	shortenerRepository := repository.NewShortenerRepository(data, cfg.BaseURL)
-	shortenerService := service.NewShortenerService(shortenerRepository)
+
+	shortenerDB := tools.NewShortenerDB(*cfg)
+	shortenerRepository := repository.NewShortenerRepository(*shortenerDB)
+	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
 	shortenerHandler := NewShortenerHandler(shortenerService)
 
 	route := chi.NewRouter()
@@ -105,17 +106,16 @@ func TestHandlerGet(t *testing.T) {
 	}{
 		{
 			name: "Simple test",
-			url:  "/WzYAhpnS",
+			url:  "/WzYAhS",
 			want: want{
 				contentType: "text/html",
 				statusCode:  http.StatusTemporaryRedirect,
 				location:    "https://practicum.yandex.ru/",
 			},
 		},
-
 		{
 			name: "Bad request test",
-			url:  "/WzYAhS",
+			url:  "/WzYAhSs",
 			want: want{
 				contentType: "text/html",
 				statusCode:  http.StatusBadRequest,
@@ -124,13 +124,28 @@ func TestHandlerGet(t *testing.T) {
 		},
 	}
 
-	data := map[string]string{
-		"WzYAhpnS": "https://practicum.yandex.ru/",
-		"WzYAhS":   "https://practicum.yandex.ru/learn",
+	cfg := &config.Config{
+		Port:     "9090",
+		BaseURL:  "http://test.local",
+		FilePath: "data.json",
 	}
 
-	shortenerRepository := repository.NewShortenerRepository(data, "http://test.local")
-	shortenerService := service.NewShortenerService(shortenerRepository)
+	shortenerDB := tools.NewShortenerDB(*cfg)
+	defer shortenerDB.RemoveFile()
+
+	shortenerDB.Save(&models.ShortenURL{
+		Uuid:        1,
+		ShortUrl:    "WzYAhS",
+		OriginalUrl: "https://practicum.yandex.ru/learn",
+	})
+	shortenerDB.Save(&models.ShortenURL{
+		Uuid:        2,
+		ShortUrl:    "WzYAhSs",
+		OriginalUrl: "https://practicum.yandex.ru/learn",
+	})
+
+	shortenerRepository := repository.NewShortenerRepository(*shortenerDB)
+	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
 	shortenerHandler := NewShortenerHandler(shortenerService)
 
 	route := chi.NewRouter()
@@ -175,10 +190,17 @@ func TestHandlerAddNewURLFromJson(t *testing.T) {
 		},
 	}
 
-	data := make(map[string]string)
+	cfg := &config.Config{
+		Port:     "9090",
+		BaseURL:  "http://test.local",
+		FilePath: "data.json",
+	}
 
-	shortenerRepository := repository.NewShortenerRepository(data, "http://test.local")
-	shortenerService := service.NewShortenerService(shortenerRepository)
+	shortenerDB := tools.NewShortenerDB(*cfg)
+	defer shortenerDB.RemoveFile()
+
+	shortenerRepository := repository.NewShortenerRepository(*shortenerDB)
+	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
 	shortenerHandler := NewShortenerHandler(shortenerService)
 
 	router := chi.NewRouter()
