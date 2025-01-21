@@ -45,7 +45,7 @@ func (s *Consumer) ReadShorteners() (map[string]string, error) {
 			return nil, err
 		}
 
-		data[s.ShortUrl] = s.OriginalUrl
+		data[s.ShortURL] = s.OriginalURL
 	}
 
 	return data, nil

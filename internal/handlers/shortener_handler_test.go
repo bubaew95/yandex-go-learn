@@ -134,14 +134,14 @@ func TestHandlerGet(t *testing.T) {
 	defer shortenerDB.RemoveFile()
 
 	shortenerDB.Save(&models.ShortenURL{
-		Uuid:        1,
-		ShortUrl:    "WzYAhS",
-		OriginalUrl: "https://practicum.yandex.ru/learn",
+		UUID:        1,
+		ShortURL:    "WzYAhS",
+		OriginalURL: "https://practicum.yandex.ru/learn",
 	})
 	shortenerDB.Save(&models.ShortenURL{
-		Uuid:        2,
-		ShortUrl:    "WzYAhSs",
-		OriginalUrl: "https://practicum.yandex.ru/learn",
+		UUID:        2,
+		ShortURL:    "WzYAhSs",
+		OriginalURL: "https://practicum.yandex.ru/learn",
 	})
 
 	shortenerRepository := repository.NewShortenerRepository(*shortenerDB)

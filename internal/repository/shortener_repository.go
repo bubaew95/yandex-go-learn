@@ -20,9 +20,9 @@ func NewShortenerRepository(s tools.ShortenerDB) *ShortenerRepository {
 
 func (s ShortenerRepository) SetURL(id string, url string) {
 	data := &models.ShortenURL{
-		Uuid:        s.shortenerDB.Count() + 1,
-		ShortUrl:    id,
-		OriginalUrl: url,
+		UUID:        s.shortenerDB.Count() + 1,
+		ShortURL:    id,
+		OriginalURL: url,
 	}
 
 	err := s.shortenerDB.Save(data)
