@@ -26,11 +26,11 @@ func NewConsumer(filename string) (*Consumer, error) {
 	}, nil
 }
 
-func (s *Consumer) ReadShorteners() (map[string]string, error) {
+func (c *Consumer) ReadShorteners() (map[string]string, error) {
 	data := make(map[string]string)
 
 	for {
-		line, err := s.bufio.ReadString('\n')
+		line, err := c.bufio.ReadString('\n')
 		if err != nil {
 			if err == io.EOF {
 				break
