@@ -18,7 +18,7 @@ func GZipMiddleware(h http.Handler) http.Handler {
 			defer cw.Close()
 		}
 
-		if isContentEncoding(r) && isAccessContentType(r) {
+		if isContentEncoding(r) {
 			cr, err := compress.NewCompressReader(r.Body)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
