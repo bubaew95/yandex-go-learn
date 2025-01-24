@@ -14,12 +14,6 @@ func GZipMiddleware(h http.Handler) http.Handler {
 
 		logger.Log.Info("Content-type: " + r.Header.Get("Content-type"))
 
-		if isAcceptEncoding(r) {
-			cw := compress.NewCompressWriter(w)
-			ow = cw
-			defer cw.Close()
-		}
-
 		if isContentEncoding(r) {
 			cr, err := compress.NewCompressReader(r.Body)
 			if err != nil {
@@ -29,6 +23,12 @@ func GZipMiddleware(h http.Handler) http.Handler {
 
 			r.Body = cr
 			defer cr.Close()
+		}
+
+		if isAcceptEncoding(r) && isAccessContentType(r) {
+			cw := compress.NewCompressWriter(w)
+			ow = cw
+			defer cw.Close()
 		}
 
 		h.ServeHTTP(ow, r)
