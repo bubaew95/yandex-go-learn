@@ -12,6 +12,8 @@ func GZipMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ow := w
 
+		logger.Log.Info("Content-type: " + r.Header.Get("Content-type"))
+
 		if isAcceptEncoding(r) {
 			cw := compress.NewCompressWriter(w)
 			ow = cw
