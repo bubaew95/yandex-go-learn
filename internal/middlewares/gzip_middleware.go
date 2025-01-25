@@ -5,14 +5,12 @@ import (
 	"strings"
 
 	"github.com/bubaew95/yandex-go-learn/internal/compress"
-	"github.com/bubaew95/yandex-go-learn/internal/logger"
 )
 
 func GZipMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ow := w
 
-		logger.Log.Info("Content-type: " + r.Header.Get("Content-type"))
 		if isContentEncoding(r) {
 			cr, err := compress.NewCompressReader(r.Body)
 			if err != nil {
@@ -35,15 +33,11 @@ func GZipMiddleware(h http.Handler) http.Handler {
 }
 
 func isAcceptEncoding(r *http.Request) bool {
-	logger.Log.Info("Accept-Encoding isset")
-
 	acceptEncoding := r.Header.Get("Accept-Encoding")
 	return strings.Contains(acceptEncoding, "gzip")
 }
 
 func isContentEncoding(r *http.Request) bool {
-	logger.Log.Info("Content-Encoding isset")
-
 	contentEncoding := r.Header.Get("Content-Encoding")
 	return strings.Contains(contentEncoding, "gzip")
 }
