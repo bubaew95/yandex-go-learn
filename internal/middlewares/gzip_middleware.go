@@ -13,7 +13,6 @@ func GZipMiddleware(h http.Handler) http.Handler {
 		ow := w
 
 		logger.Log.Info("Content-type: " + r.Header.Get("Content-type"))
-
 		if isContentEncoding(r) {
 			cr, err := compress.NewCompressReader(r.Body)
 			if err != nil {
