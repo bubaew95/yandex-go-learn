@@ -5,14 +5,14 @@ import (
 
 	"github.com/bubaew95/yandex-go-learn/internal/logger"
 	"github.com/bubaew95/yandex-go-learn/internal/models"
-	"github.com/bubaew95/yandex-go-learn/internal/tools"
+	"github.com/bubaew95/yandex-go-learn/internal/storage"
 )
 
 type ShortenerRepository struct {
-	shortenerDB tools.ShortenerDB
+	shortenerDB storage.ShortenerDB
 }
 
-func NewShortenerRepository(s tools.ShortenerDB) *ShortenerRepository {
+func NewShortenerRepository(s storage.ShortenerDB) *ShortenerRepository {
 	return &ShortenerRepository{
 		shortenerDB: s,
 	}

@@ -9,7 +9,7 @@ import (
 	"github.com/bubaew95/yandex-go-learn/internal/middlewares"
 	"github.com/bubaew95/yandex-go-learn/internal/repository"
 	"github.com/bubaew95/yandex-go-learn/internal/service"
-	"github.com/bubaew95/yandex-go-learn/internal/tools"
+	"github.com/bubaew95/yandex-go-learn/internal/storage"
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 )
@@ -20,7 +20,7 @@ func main() {
 	}
 
 	cfg := config.NewConfig()
-	shortenerDB := tools.NewShortenerDB(*cfg)
+	shortenerDB := storage.NewShortenerDB(*cfg)
 
 	shortenerRepository := repository.NewShortenerRepository(*shortenerDB)
 	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)

@@ -13,7 +13,7 @@ import (
 	"github.com/bubaew95/yandex-go-learn/internal/models"
 	"github.com/bubaew95/yandex-go-learn/internal/repository"
 	"github.com/bubaew95/yandex-go-learn/internal/service"
-	"github.com/bubaew95/yandex-go-learn/internal/tools"
+	"github.com/bubaew95/yandex-go-learn/internal/storage"
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -57,7 +57,7 @@ func TestHandlerCreate(t *testing.T) {
 
 	cfg := config.NewConfig()
 
-	shortenerDB := tools.NewShortenerDB(*cfg)
+	shortenerDB := storage.NewShortenerDB(*cfg)
 	shortenerRepository := repository.NewShortenerRepository(*shortenerDB)
 	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
 	shortenerHandler := NewShortenerHandler(shortenerService)
@@ -130,7 +130,7 @@ func TestHandlerGet(t *testing.T) {
 		FilePath: "data.json",
 	}
 
-	shortenerDB := tools.NewShortenerDB(*cfg)
+	shortenerDB := storage.NewShortenerDB(*cfg)
 	defer shortenerDB.RemoveFile()
 
 	shortenerDB.Save(&models.ShortenURL{
@@ -196,7 +196,7 @@ func TestHandlerAddNewURLFromJson(t *testing.T) {
 		FilePath: "data.json",
 	}
 
-	shortenerDB := tools.NewShortenerDB(*cfg)
+	shortenerDB := storage.NewShortenerDB(*cfg)
 	defer shortenerDB.RemoveFile()
 
 	shortenerRepository := repository.NewShortenerRepository(*shortenerDB)
