@@ -9,28 +9,18 @@ import (
 	"github.com/bubaew95/yandex-go-learn/internal/models"
 )
 
-type Consumer struct {
-	file  *os.File
-	bufio *bufio.Reader
-}
-
-func NewConsumer(filename string) (*Consumer, error) {
+func ReadShorteners(filename string) (map[string]string, error) {
 	file, err := os.OpenFile(filename, os.O_RDONLY|os.O_CREATE, 0666)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Consumer{
-		file:  file,
-		bufio: bufio.NewReader(file),
-	}, nil
-}
+	defer file.Close()
 
-func (c *Consumer) ReadShorteners() (map[string]string, error) {
+	bufio := bufio.NewReader(file)
 	data := make(map[string]string)
-
 	for {
-		line, err := c.bufio.ReadString('\n')
+		line, err := bufio.ReadString('\n')
 		if err != nil {
 			if err == io.EOF {
 				break
@@ -49,8 +39,4 @@ func (c *Consumer) ReadShorteners() (map[string]string, error) {
 	}
 
 	return data, nil
-}
-
-func (c *Consumer) Close() error {
-	return c.file.Close()
 }

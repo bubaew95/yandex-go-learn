@@ -10,17 +10,22 @@ import (
 
 type ShortenerRepository struct {
 	shortenerDB storage.ShortenerDB
+	cache       map[string]string
 }
 
 func NewShortenerRepository(s storage.ShortenerDB) *ShortenerRepository {
+	data, _ := s.Load()
 	return &ShortenerRepository{
 		shortenerDB: s,
+		cache:       data,
 	}
 }
 
 func (s ShortenerRepository) SetURL(id string, url string) {
+	s.cache[id] = url
+
 	data := &models.ShortenURL{
-		UUID:        s.shortenerDB.Count() + 1,
+		UUID:        len(s.cache),
 		ShortURL:    id,
 		OriginalURL: url,
 	}
@@ -32,17 +37,11 @@ func (s ShortenerRepository) SetURL(id string, url string) {
 }
 
 func (s ShortenerRepository) GetURLByID(id string) (string, bool) {
-	data, err := s.shortenerDB.Load()
-	if err != nil {
-		return "", false
-	}
+	url, ok := s.cache[id]
 
-	url, ok := data[id]
 	return url, ok
 }
 
 func (s ShortenerRepository) GetAllURL() map[string]string {
-	data, _ := s.shortenerDB.Load()
-
-	return data
+	return s.cache
 }

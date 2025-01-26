@@ -57,7 +57,7 @@ func TestHandlerCreate(t *testing.T) {
 
 	cfg := config.NewConfig()
 
-	shortenerDB := storage.NewShortenerDB(*cfg)
+	shortenerDB, _ := storage.NewShortenerDB(*cfg)
 	shortenerRepository := repository.NewShortenerRepository(*shortenerDB)
 	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
 	shortenerHandler := NewShortenerHandler(shortenerService)
@@ -130,7 +130,7 @@ func TestHandlerGet(t *testing.T) {
 		FilePath: "data.json",
 	}
 
-	shortenerDB := storage.NewShortenerDB(*cfg)
+	shortenerDB, _ := storage.NewShortenerDB(*cfg)
 	defer shortenerDB.RemoveFile()
 
 	shortenerDB.Save(&models.ShortenURL{
@@ -196,7 +196,7 @@ func TestHandlerAddNewURLFromJson(t *testing.T) {
 		FilePath: "data.json",
 	}
 
-	shortenerDB := storage.NewShortenerDB(*cfg)
+	shortenerDB, _ := storage.NewShortenerDB(*cfg)
 	defer shortenerDB.RemoveFile()
 
 	shortenerRepository := repository.NewShortenerRepository(*shortenerDB)

@@ -1,6 +1,9 @@
 package storage
 
 import (
+	"bufio"
+	"encoding/json"
+	"io"
 	"os"
 
 	"github.com/bubaew95/yandex-go-learn/config"
@@ -8,23 +11,24 @@ import (
 )
 
 type ShortenerDB struct {
-	config config.Config
+	config   config.Config
+	producer *Producer
 }
 
-func NewShortenerDB(c config.Config) *ShortenerDB {
-	return &ShortenerDB{
-		config: c,
+func NewShortenerDB(c config.Config) (*ShortenerDB, error) {
+	producer, err := NewProducer(c.FilePath)
+	if err != nil {
+		return nil, err
 	}
+
+	return &ShortenerDB{
+		config:   c,
+		producer: producer,
+	}, nil
 }
 
 func (s ShortenerDB) Save(data *models.ShortenURL) error {
-	producer, err := NewProducer(s.config.FilePath)
-	if err != nil {
-		return err
-	}
-	defer producer.Close()
-
-	err = producer.WriteShortener(data)
+	err := s.producer.WriteShortener(data)
 	if err != nil {
 		return err
 	}
@@ -33,30 +37,41 @@ func (s ShortenerDB) Save(data *models.ShortenURL) error {
 }
 
 func (s ShortenerDB) Load() (map[string]string, error) {
-	consumer, err := NewConsumer(s.config.FilePath)
+	file, err := os.OpenFile(s.config.FilePath, os.O_RDONLY|os.O_CREATE, 0666)
 	if err != nil {
 		return nil, err
 	}
 
-	defer consumer.Close()
+	defer file.Close()
 
-	read, err := consumer.ReadShorteners()
-	if err != nil {
-		return nil, err
+	bufio := bufio.NewReader(file)
+	data := make(map[string]string)
+	for {
+		line, err := bufio.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+
+			return nil, err
+		}
+
+		var s models.ShortenURL
+		err = json.Unmarshal([]byte(line), &s)
+		if err != nil {
+			return nil, err
+		}
+
+		data[s.ShortURL] = s.OriginalURL
 	}
 
-	return read, nil
-}
-
-func (s ShortenerDB) Count() int {
-	datas, err := s.Load()
-	if err != nil {
-		return 0
-	}
-
-	return len(datas)
+	return data, nil
 }
 
 func (s ShortenerDB) RemoveFile() error {
 	return os.Remove(s.config.FilePath)
+}
+
+func (s ShortenerDB) Close() error {
+	return s.producer.Close()
 }
