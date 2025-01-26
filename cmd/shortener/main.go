@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/bubaew95/yandex-go-learn/config"
@@ -20,7 +21,16 @@ func main() {
 	}
 
 	cfg := config.NewConfig()
-	shortenerDB := storage.NewShortenerDB(*cfg)
+	shortenerDB, err := storage.NewShortenerDB(*cfg)
+	if err != nil {
+		logger.Log.Fatal(fmt.Sprintf("Ошибка инициализации базы данных: %v", err))
+	}
+
+	defer func() {
+		if err := shortenerDB.Close(); err != nil {
+			logger.Log.Error(fmt.Sprintf("Ошибка при закрытии базы данных: %v", err))
+		}
+	}()
 
 	shortenerRepository := repository.NewShortenerRepository(*shortenerDB)
 	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
