@@ -7,13 +7,15 @@ import (
 )
 
 type Config struct {
-	Port    string
-	BaseURL string
+	Port     string
+	BaseURL  string
+	FilePath string
 }
 
 func NewConfig() *Config {
 	port := flag.String("a", ":8080", "отвечает за адрес запуска HTTP-сервера")
 	baseURL := flag.String("b", "", " отвечает за базовый адрес результирующего сокращённого URL")
+	filePath := flag.String("f", "data.json", "путь до файла, куда сохраняются данные в формате JSON")
 
 	flag.Parse()
 
@@ -29,8 +31,13 @@ func NewConfig() *Config {
 		*baseURL = fmt.Sprintf("http://localhost%s", *port)
 	}
 
+	if envFilePath := os.Getenv("FILE_STORAGE_PATH"); envFilePath != "" {
+		*filePath = envFilePath
+	}
+
 	return &Config{
-		Port:    *port,
-		BaseURL: *baseURL,
+		Port:     *port,
+		BaseURL:  *baseURL,
+		FilePath: *filePath,
 	}
 }
