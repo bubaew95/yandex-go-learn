@@ -23,7 +23,7 @@ func NewShortenerService(r interfaces.ShortenerRepositoryInterface, cfg config.C
 	}
 }
 
-func (s *ShortenerService) GenerateID(url string, randomStringLength int) string {
+func (s *ShortenerService) GenerateURL(url string, randomStringLength int) string {
 	s.mx.Lock()
 	defer s.mx.Unlock()
 
@@ -38,7 +38,7 @@ func (s *ShortenerService) GenerateID(url string, randomStringLength int) string
 		}
 	}
 
-	return genID
+	return s.generateResponseURL(genID)
 }
 
 func (s ShortenerService) RandStringBytes(n int) string {
@@ -53,14 +53,14 @@ func (s ShortenerService) RandStringBytes(n int) string {
 	return string(b)
 }
 
-func (s ShortenerService) GenerateResponseURL(id string) string {
-	return fmt.Sprintf("%s/%s", s.config.BaseURL, id)
-}
-
 func (s ShortenerService) GetURLByID(id string) (string, bool) {
 	return s.repository.GetURLByID(id)
 }
 
 func (s ShortenerService) GetAllURL() map[string]string {
 	return s.repository.GetAllURL()
+}
+
+func (s ShortenerService) generateResponseURL(id string) string {
+	return fmt.Sprintf("%s/%s", s.config.BaseURL, id)
 }

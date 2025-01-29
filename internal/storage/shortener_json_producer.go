@@ -29,5 +29,9 @@ func (p *Producer) WriteShortener(s *models.ShortenURL) error {
 }
 
 func (p *Producer) Close() error {
+	if err := p.file.Sync(); err != nil {
+		return err
+	}
+
 	return p.file.Close()
 }

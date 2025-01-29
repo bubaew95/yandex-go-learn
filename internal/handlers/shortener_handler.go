@@ -40,8 +40,7 @@ func (s ShortenerHandler) CreateURL(res http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	genID := s.service.GenerateID(body, randomStringLength)
-	url := s.service.GenerateResponseURL(genID)
+	url := s.service.GenerateURL(body, randomStringLength)
 
 	res.WriteHeader(http.StatusCreated)
 	res.Header().Set("content-type", "text/plain")
@@ -75,8 +74,7 @@ func (s *ShortenerHandler) AddNewURL(res http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	genID := s.service.GenerateID(requestBody.URL, randomStringLength)
-	url := s.service.GenerateResponseURL(genID)
+	url := s.service.GenerateURL(requestBody.URL, randomStringLength)
 
 	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(http.StatusCreated)
