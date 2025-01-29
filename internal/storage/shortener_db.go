@@ -68,10 +68,6 @@ func (s ShortenerDB) Load() (map[string]string, error) {
 	return data, nil
 }
 
-func (s ShortenerDB) RemoveFile() error {
-	return os.Remove(s.config.FilePath)
-}
-
 func (s ShortenerDB) Close() error {
 	return s.producer.Close()
 }

@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -131,7 +132,7 @@ func TestHandlerGet(t *testing.T) {
 	}
 
 	shortenerDB, _ := storage.NewShortenerDB(*cfg)
-	defer shortenerDB.RemoveFile()
+	defer os.Remove(cfg.FilePath)
 
 	shortenerDB.Save(&models.ShortenURL{
 		UUID:        1,
@@ -197,7 +198,7 @@ func TestHandlerAddNewURLFromJson(t *testing.T) {
 	}
 
 	shortenerDB, _ := storage.NewShortenerDB(*cfg)
-	defer shortenerDB.RemoveFile()
+	defer os.Remove(cfg.FilePath)
 
 	shortenerRepository := repository.NewShortenerRepository(*shortenerDB)
 	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
