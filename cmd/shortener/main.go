@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/bubaew95/yandex-go-learn/config"
@@ -12,8 +13,15 @@ import (
 	"github.com/bubaew95/yandex-go-learn/internal/service"
 	"github.com/bubaew95/yandex-go-learn/internal/storage"
 	"github.com/go-chi/chi/v5"
+	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 )
+
+func init() {
+	if err := godotenv.Load(`../../.env`); err != nil {
+		log.Fatal("Error loading .env file")
+	}
+}
 
 func main() {
 	if err := logger.Initialize(); err != nil {
@@ -26,12 +34,6 @@ func main() {
 		logger.Log.Fatal(fmt.Sprintf("Ошибка инициализации базы данных: %v", err))
 	}
 
-	defer func() {
-		if err := shortenerDB.Close(); err != nil {
-			logger.Log.Error(fmt.Sprintf("Ошибка при закрытии базы данных: %v", err))
-		}
-	}()
-
 	shortenerRepository := repository.NewShortenerRepository(*shortenerDB)
 	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
 	shortenerHandler := handlers.NewShortenerHandler(shortenerService)
@@ -43,6 +45,21 @@ func main() {
 	route.Post("/", shortenerHandler.CreateURL)
 	route.Get("/{id}", shortenerHandler.GetURL)
 	route.Post("/api/shorten", shortenerHandler.AddNewURL)
+
+	pgRepository := repository.NewPgRepository(cfg)
+	pgService := service.NewPgService(pgRepository)
+	pgHandler := handlers.NewPgHandler(pgService)
+	route.Get("/ping", pgHandler.Ping)
+
+	defer func() {
+		if err := shortenerDB.Close(); err != nil {
+			logger.Log.Error(fmt.Sprintf("Ошибка при закрытии файла: %v", err))
+		}
+
+		if err := pgRepository.Close(); err != nil {
+			logger.Log.Error(fmt.Sprintf("Ошибка при закрытии базы данных: %v", err))
+		}
+	}()
 
 	if err := run(cfg, route); err != nil {
 		panic(err)
