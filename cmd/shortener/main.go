@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/bubaew95/yandex-go-learn/config"
@@ -13,15 +12,8 @@ import (
 	"github.com/bubaew95/yandex-go-learn/internal/service"
 	"github.com/bubaew95/yandex-go-learn/internal/storage"
 	"github.com/go-chi/chi/v5"
-	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 )
-
-func init() {
-	if err := godotenv.Load(`../../.env`); err != nil {
-		log.Fatal("Error loading .env file")
-	}
-}
 
 func main() {
 	if err := logger.Initialize(); err != nil {
