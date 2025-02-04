@@ -37,8 +37,8 @@ func NewConfig() *Config {
 		*filePath = envFilePath
 	}
 
-	if envDbDSN := os.Getenv("DATABASE_DSN"); envDbDSN != "" {
-		*databaseDSN = envDbDSN
+	if envDataBaseDSN := os.Getenv("DATABASE_DSN"); envDataBaseDSN != "" {
+		*databaseDSN = envDataBaseDSN
 	}
 
 	return &Config{

@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/bubaew95/yandex-go-learn/config"
@@ -18,9 +17,9 @@ type PgRepository struct {
 func NewPgRepository(ctg *config.Config) *PgRepository {
 	connStr := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable",
 		ctg.DataBaseDSN,
-		os.Getenv("PG_USER"),
-		os.Getenv("PG_PASSWORD"),
-		os.Getenv("PG_DB"),
+		`admin`,
+		`admin`,
+		`yandex`,
 	)
 
 	return &PgRepository{
