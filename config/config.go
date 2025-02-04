@@ -7,15 +7,24 @@ import (
 )
 
 type Config struct {
-	Port     string
-	BaseURL  string
-	FilePath string
+	Port        string
+	BaseURL     string
+	FilePath    string
+	DataBaseDSN string
 }
 
 func NewConfig() *Config {
+	dbStr := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable",
+		`127.0.0.1`,
+		`admin`,
+		`admin`,
+		`yandex`,
+	)
+
 	port := flag.String("a", ":8080", "отвечает за адрес запуска HTTP-сервера")
 	baseURL := flag.String("b", "", " отвечает за базовый адрес результирующего сокращённого URL")
 	filePath := flag.String("f", "data.json", "путь до файла, куда сохраняются данные в формате JSON")
+	databaseDSN := flag.String("d", dbStr, "Хост подключения к БД")
 
 	flag.Parse()
 
@@ -35,9 +44,14 @@ func NewConfig() *Config {
 		*filePath = envFilePath
 	}
 
+	if envDataBaseDSN := os.Getenv("DATABASE_DSN"); envDataBaseDSN != "" {
+		*databaseDSN = envDataBaseDSN
+	}
+
 	return &Config{
-		Port:     *port,
-		BaseURL:  *baseURL,
-		FilePath: *filePath,
+		Port:        *port,
+		BaseURL:     *baseURL,
+		FilePath:    *filePath,
+		DataBaseDSN: *databaseDSN,
 	}
 }
