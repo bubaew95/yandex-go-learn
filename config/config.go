@@ -14,10 +14,17 @@ type Config struct {
 }
 
 func NewConfig() *Config {
+	dbStr := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable",
+		`127.0.0.1`,
+		`admin`,
+		`admin`,
+		`yandex`,
+	)
+
 	port := flag.String("a", ":8080", "отвечает за адрес запуска HTTP-сервера")
 	baseURL := flag.String("b", "", " отвечает за базовый адрес результирующего сокращённого URL")
 	filePath := flag.String("f", "data.json", "путь до файла, куда сохраняются данные в формате JSON")
-	databaseDSN := flag.String("d", "127.0.0.1", "Хост подключения к БД")
+	databaseDSN := flag.String("d", dbStr, "Хост подключения к БД")
 
 	flag.Parse()
 
