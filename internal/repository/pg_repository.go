@@ -45,24 +45,24 @@ func dbConnect(connStr string) *sql.DB {
 	return db
 }
 
-func (pr PgRepository) Close() error {
-	return pr.db.Close()
+func (p PgRepository) Close() error {
+	return p.db.Close()
 }
 
-func (pr PgRepository) Ping() error {
-	return pr.db.Ping()
+func (p PgRepository) Ping() error {
+	return p.db.Ping()
 }
 
-func (s PgRepository) SetURL(id string, url string) {
-	s.db.ExecContext(context.Background(),
+func (p PgRepository) SetURL(id string, url string) {
+	p.db.ExecContext(context.Background(),
 		"INSERT INTO shortener (id, url) VALUES($1, $2)",
 		id, url)
 }
 
-func (s PgRepository) GetURLByID(id string) (string, bool) {
+func (p PgRepository) GetURLByID(id string) (string, bool) {
 	var url string
 
-	row := s.db.QueryRowContext(context.Background(),
+	row := p.db.QueryRowContext(context.Background(),
 		"SELECT url FROM shortener WHERE id = $1", id)
 	err := row.Scan(&url)
 	if err != nil {
@@ -72,6 +72,6 @@ func (s PgRepository) GetURLByID(id string) (string, bool) {
 	return url, true
 }
 
-func (s PgRepository) GetAllURL() map[string]string {
+func (p PgRepository) GetAllURL() map[string]string {
 	return nil
 }
