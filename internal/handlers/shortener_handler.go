@@ -90,8 +90,8 @@ func (s *ShortenerHandler) AddNewURL(res http.ResponseWriter, req *http.Request)
 	}
 }
 
-func (ps ShortenerHandler) Ping(w http.ResponseWriter, r *http.Request) {
-	if err := ps.service.Ping(); err != nil {
+func (s ShortenerHandler) Ping(w http.ResponseWriter, r *http.Request) {
+	if err := s.service.Ping(); err != nil {
 		fmt.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
