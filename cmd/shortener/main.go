@@ -54,6 +54,7 @@ func runApp() error {
 }
 
 func initRepository(cfg config.Config) (interfaces.ShortenerRepositoryInterface, error) {
+	fmt.Println(cfg.DataBaseDSN)
 	if cfg.DataBaseDSN != "" {
 		shortenerRepository, err := repository.NewPgRepository(cfg)
 		if err != nil {
