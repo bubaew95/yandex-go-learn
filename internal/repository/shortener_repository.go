@@ -22,7 +22,7 @@ func NewShortenerRepository(s storage.ShortenerDB) *ShortenerRepository {
 }
 
 func (s ShortenerRepository) Close() error {
-	return s.Close()
+	return s.shortenerDB.Close()
 }
 
 func (s ShortenerRepository) SetURL(id string, url string) {
