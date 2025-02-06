@@ -89,3 +89,13 @@ func (s *ShortenerHandler) AddNewURL(res http.ResponseWriter, req *http.Request)
 		return
 	}
 }
+
+func (ps ShortenerHandler) Ping(w http.ResponseWriter, r *http.Request) {
+	if err := ps.service.Ping(); err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}

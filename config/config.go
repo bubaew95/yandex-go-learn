@@ -24,7 +24,7 @@ func NewConfig() *Config {
 	port := flag.String("a", ":8080", "отвечает за адрес запуска HTTP-сервера")
 	baseURL := flag.String("b", "", " отвечает за базовый адрес результирующего сокращённого URL")
 	filePath := flag.String("f", "data.json", "путь до файла, куда сохраняются данные в формате JSON")
-	databaseDSN := flag.String("d", dbStr, "Хост подключения к БД")
+	databaseDSN := flag.String("d", dbStr, "Строка подключения к БД")
 
 	flag.Parse()
 

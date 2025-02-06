@@ -5,4 +5,5 @@ type ShortenerServiceInterface interface {
 	RandStringBytes(n int) string
 	GetURLByID(id string) (string, bool)
 	GetAllURL() map[string]string
+	Ping() error
 }

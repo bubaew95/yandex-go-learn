@@ -21,6 +21,10 @@ func NewShortenerRepository(s storage.ShortenerDB) *ShortenerRepository {
 	}
 }
 
+func (s ShortenerRepository) Close() error {
+	return s.Close()
+}
+
 func (s ShortenerRepository) SetURL(id string, url string) {
 	s.cache[id] = url
 
@@ -44,4 +48,8 @@ func (s ShortenerRepository) GetURLByID(id string) (string, bool) {
 
 func (s ShortenerRepository) GetAllURL() map[string]string {
 	return s.cache
+}
+
+func (s ShortenerRepository) Ping() error {
+	return nil
 }

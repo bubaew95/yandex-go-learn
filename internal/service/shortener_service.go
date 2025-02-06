@@ -61,6 +61,10 @@ func (s ShortenerService) GetAllURL() map[string]string {
 	return s.repository.GetAllURL()
 }
 
+func (s ShortenerService) Ping() error {
+	return s.repository.Ping()
+}
+
 func (s ShortenerService) generateResponseURL(id string) string {
 	return fmt.Sprintf("%s/%s", s.config.BaseURL, id)
 }
