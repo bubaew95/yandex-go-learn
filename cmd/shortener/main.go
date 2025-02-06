@@ -3,9 +3,11 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/bubaew95/yandex-go-learn/config"
 	"github.com/bubaew95/yandex-go-learn/internal/handlers"
+	"github.com/bubaew95/yandex-go-learn/internal/interfaces"
 	"github.com/bubaew95/yandex-go-learn/internal/logger"
 	"github.com/bubaew95/yandex-go-learn/internal/middlewares"
 	"github.com/bubaew95/yandex-go-learn/internal/repository"
@@ -15,21 +17,60 @@ import (
 	"go.uber.org/zap"
 )
 
+type closer interface {
+	Close() error
+}
+
 func main() {
+	if err := runApp(); err != nil {
+		logger.Log.Fatal(fmt.Sprintf("Ошибка запуска приложения: %v", err))
+		os.Exit(1)
+	}
+}
+
+func runApp() error {
 	if err := logger.Initialize(); err != nil {
-		panic(err)
+		return fmt.Errorf("ошибка инициализации логирования: %w", err)
 	}
 
 	cfg := config.NewConfig()
-	shortenerDB, err := storage.NewShortenerDB(*cfg)
+	shortenerRepository, err := initRepository(*cfg)
 	if err != nil {
-		logger.Log.Fatal(fmt.Sprintf("Ошибка инициализации базы данных: %v", err))
+		return err
 	}
+	defer safeClose(shortenerRepository)
 
-	shortenerRepository := repository.NewShortenerRepository(*shortenerDB)
 	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
 	shortenerHandler := handlers.NewShortenerHandler(shortenerService)
 
+	route := setupRouter(shortenerHandler)
+
+	logger.Log.Info("Running server", zap.String("port", cfg.Port))
+	if err := http.ListenAndServe(cfg.Port, route); err != nil {
+		return fmt.Errorf("ошибка запуска сервера: %w", err)
+	}
+
+	return nil
+}
+
+func initRepository(cfg config.Config) (interfaces.ShortenerRepositoryInterface, error) {
+	if cfg.DataBaseDSN != "" {
+		shortenerRepository, err := repository.NewPgRepository(cfg)
+		if err != nil {
+			logger.Log.Fatal(fmt.Sprintf("Ошибка инициализации базы данных: %v", err))
+		}
+
+		return shortenerRepository, nil
+	}
+
+	shortenerDB, err := storage.NewShortenerDB(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка инициализации файла базы данных: %w", err)
+	}
+	return repository.NewShortenerRepository(*shortenerDB), nil
+}
+
+func setupRouter(shortenerHandler *handlers.ShortenerHandler) *chi.Mux {
 	route := chi.NewRouter()
 	route.Use(middlewares.LoggerMiddleware)
 	route.Use(middlewares.GZipMiddleware)
@@ -37,29 +78,13 @@ func main() {
 	route.Post("/", shortenerHandler.CreateURL)
 	route.Get("/{id}", shortenerHandler.GetURL)
 	route.Post("/api/shorten", shortenerHandler.AddNewURL)
+	route.Get("/ping", shortenerHandler.Ping)
 
-	pgRepository := repository.NewPgRepository(cfg)
-	pgService := service.NewPgService(pgRepository)
-	pgHandler := handlers.NewPgHandler(pgService)
-	route.Get("/ping", pgHandler.Ping)
-
-	defer func() {
-		if err := shortenerDB.Close(); err != nil {
-			logger.Log.Error(fmt.Sprintf("Ошибка при закрытии файла: %v", err))
-		}
-
-		if err := pgRepository.Close(); err != nil {
-			logger.Log.Error(fmt.Sprintf("Ошибка при закрытии базы данных: %v", err))
-		}
-	}()
-
-	if err := run(cfg, route); err != nil {
-		panic(err)
-	}
+	return route
 }
 
-func run(cfg *config.Config, route *chi.Mux) error {
-	logger.Log.Info("Running server", zap.String("port", cfg.Port))
-
-	return http.ListenAndServe(cfg.Port, route)
+func safeClose(c closer) {
+	if err := c.Close(); err != nil {
+		logger.Log.Error(fmt.Sprintf("Ошибка при закрытии ресурса: %v", err))
+	}
 }
