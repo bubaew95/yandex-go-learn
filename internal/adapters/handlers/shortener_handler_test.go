@@ -11,10 +11,10 @@ import (
 	"testing"
 
 	"github.com/bubaew95/yandex-go-learn/config"
-	"github.com/bubaew95/yandex-go-learn/internal/models"
-	"github.com/bubaew95/yandex-go-learn/internal/repository"
-	"github.com/bubaew95/yandex-go-learn/internal/service"
-	"github.com/bubaew95/yandex-go-learn/internal/storage"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/storage"
+	"github.com/bubaew95/yandex-go-learn/internal/core/model"
+	"github.com/bubaew95/yandex-go-learn/internal/core/service"
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -134,12 +134,12 @@ func TestHandlerGet(t *testing.T) {
 	shortenerDB, _ := storage.NewShortenerDB(*cfg)
 	defer os.Remove(cfg.FilePath)
 
-	shortenerDB.Save(&models.ShortenURL{
+	shortenerDB.Save(&model.ShortenURL{
 		UUID:        1,
 		ShortURL:    "WzYAhS",
 		OriginalURL: "https://practicum.yandex.ru/learn",
 	})
-	shortenerDB.Save(&models.ShortenURL{
+	shortenerDB.Save(&model.ShortenURL{
 		UUID:        2,
 		ShortURL:    "WzYAhSs",
 		OriginalURL: "https://practicum.yandex.ru/learn",
@@ -222,7 +222,7 @@ func TestHandlerAddNewURLFromJson(t *testing.T) {
 			respBody, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 
-			var responseModel models.ShortenerResponse
+			var responseModel model.ShortenerResponse
 			err = json.Unmarshal(respBody, &responseModel)
 			require.NoError(t, err)
 

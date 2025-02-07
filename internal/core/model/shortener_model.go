@@ -1,4 +1,4 @@
-package models
+package model
 
 type ShortenerRequest struct {
 	URL string `json:"url"`

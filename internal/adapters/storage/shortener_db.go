@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/bubaew95/yandex-go-learn/config"
-	"github.com/bubaew95/yandex-go-learn/internal/models"
+	"github.com/bubaew95/yandex-go-learn/internal/core/model"
 )
 
 type ShortenerDB struct {
@@ -27,7 +27,7 @@ func NewShortenerDB(c config.Config) (*ShortenerDB, error) {
 	}, nil
 }
 
-func (s ShortenerDB) Save(data *models.ShortenURL) error {
+func (s ShortenerDB) Save(data *model.ShortenURL) error {
 	err := s.producer.WriteShortener(data)
 	if err != nil {
 		return err
@@ -56,7 +56,7 @@ func (s ShortenerDB) Load() (map[string]string, error) {
 			return nil, err
 		}
 
-		var s models.ShortenURL
+		var s model.ShortenURL
 		err = json.Unmarshal([]byte(line), &s)
 		if err != nil {
 			return nil, err

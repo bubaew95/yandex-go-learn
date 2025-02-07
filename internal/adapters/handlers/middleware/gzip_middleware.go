@@ -1,10 +1,10 @@
-package middlewares
+package middleware
 
 import (
 	"net/http"
 	"strings"
 
-	"github.com/bubaew95/yandex-go-learn/internal/compress"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/compress"
 )
 
 func GZipMiddleware(h http.Handler) http.Handler {

@@ -3,9 +3,9 @@ package repository
 import (
 	"fmt"
 
-	"github.com/bubaew95/yandex-go-learn/internal/logger"
-	"github.com/bubaew95/yandex-go-learn/internal/models"
-	"github.com/bubaew95/yandex-go-learn/internal/storage"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/logger"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/storage"
+	"github.com/bubaew95/yandex-go-learn/internal/core/model"
 )
 
 type ShortenerRepository struct {
@@ -21,10 +21,14 @@ func NewShortenerRepository(s storage.ShortenerDB) *ShortenerRepository {
 	}
 }
 
+func (s ShortenerRepository) Close() error {
+	return s.shortenerDB.Close()
+}
+
 func (s ShortenerRepository) SetURL(id string, url string) {
 	s.cache[id] = url
 
-	data := &models.ShortenURL{
+	data := &model.ShortenURL{
 		UUID:        len(s.cache),
 		ShortURL:    id,
 		OriginalURL: url,
@@ -44,4 +48,8 @@ func (s ShortenerRepository) GetURLByID(id string) (string, bool) {
 
 func (s ShortenerRepository) GetAllURL() map[string]string {
 	return s.cache
+}
+
+func (s ShortenerRepository) Ping() error {
+	return nil
 }
