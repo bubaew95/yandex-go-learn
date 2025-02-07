@@ -30,7 +30,7 @@ func main() {
 
 func runApp() error {
 	if err := logger.Initialize(); err != nil {
-		return fmt.Errorf("Ошибка инициализации логирования: %w", err)
+		return fmt.Errorf("ошибка инициализации логирования: %w", err)
 	}
 
 	cfg := config.NewConfig()
