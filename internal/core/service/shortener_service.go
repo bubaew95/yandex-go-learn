@@ -6,16 +6,16 @@ import (
 	"sync"
 
 	"github.com/bubaew95/yandex-go-learn/config"
-	"github.com/bubaew95/yandex-go-learn/internal/interfaces"
+	"github.com/bubaew95/yandex-go-learn/internal/core/ports"
 )
 
 type ShortenerService struct {
-	repository interfaces.ShortenerRepositoryInterface
+	repository ports.ShortenerRepositoryInterface
 	config     config.Config
 	mx         *sync.Mutex
 }
 
-func NewShortenerService(r interfaces.ShortenerRepositoryInterface, cfg config.Config) *ShortenerService {
+func NewShortenerService(r ports.ShortenerRepositoryInterface, cfg config.Config) *ShortenerService {
 	return &ShortenerService{
 		repository: r,
 		config:     cfg,

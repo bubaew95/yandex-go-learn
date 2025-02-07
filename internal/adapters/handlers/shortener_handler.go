@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/bubaew95/yandex-go-learn/internal/interfaces"
-	"github.com/bubaew95/yandex-go-learn/internal/logger"
-	"github.com/bubaew95/yandex-go-learn/internal/models"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/logger"
+	"github.com/bubaew95/yandex-go-learn/internal/core/model"
+	"github.com/bubaew95/yandex-go-learn/internal/core/ports"
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 )
@@ -17,10 +17,10 @@ import (
 const randomStringLength = 8
 
 type ShortenerHandler struct {
-	service interfaces.ShortenerServiceInterface
+	service ports.ShortenerServiceInterface
 }
 
-func NewShortenerHandler(s interfaces.ShortenerServiceInterface) *ShortenerHandler {
+func NewShortenerHandler(s ports.ShortenerServiceInterface) *ShortenerHandler {
 	return &ShortenerHandler{
 		service: s,
 	}
@@ -66,7 +66,7 @@ func (s *ShortenerHandler) GetURL(res http.ResponseWriter, req *http.Request) {
 }
 
 func (s *ShortenerHandler) AddNewURL(res http.ResponseWriter, req *http.Request) {
-	var requestBody models.ShortenerRequest
+	var requestBody model.ShortenerRequest
 	dec := json.NewDecoder(req.Body)
 	if err := dec.Decode(&requestBody); err != nil {
 		logger.Log.Debug("cannot decode request JSON body", zap.Error(err))
@@ -79,7 +79,7 @@ func (s *ShortenerHandler) AddNewURL(res http.ResponseWriter, req *http.Request)
 	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(http.StatusCreated)
 
-	responseModel := models.ShortenerResponse{
+	responseModel := model.ShortenerResponse{
 		Result: url,
 	}
 

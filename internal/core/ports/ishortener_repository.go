@@ -1,4 +1,4 @@
-package interfaces
+package ports
 
 type ShortenerRepositoryInterface interface {
 	GetURLByID(id string) (string, bool)

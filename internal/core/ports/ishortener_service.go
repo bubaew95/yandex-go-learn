@@ -1,4 +1,4 @@
-package interfaces
+package ports
 
 type ShortenerServiceInterface interface {
 	GenerateURL(url string, randomStringLength int) string

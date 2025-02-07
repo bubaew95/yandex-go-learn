@@ -6,13 +6,13 @@ import (
 	"os"
 
 	"github.com/bubaew95/yandex-go-learn/config"
-	"github.com/bubaew95/yandex-go-learn/internal/handlers"
-	"github.com/bubaew95/yandex-go-learn/internal/interfaces"
-	"github.com/bubaew95/yandex-go-learn/internal/logger"
-	"github.com/bubaew95/yandex-go-learn/internal/middlewares"
-	"github.com/bubaew95/yandex-go-learn/internal/repository"
-	"github.com/bubaew95/yandex-go-learn/internal/service"
-	"github.com/bubaew95/yandex-go-learn/internal/storage"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/handlers"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/handlers/middleware"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/logger"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/storage"
+	"github.com/bubaew95/yandex-go-learn/internal/core/ports"
+	"github.com/bubaew95/yandex-go-learn/internal/core/service"
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 )
@@ -30,7 +30,7 @@ func main() {
 
 func runApp() error {
 	if err := logger.Initialize(); err != nil {
-		return fmt.Errorf("ошибка инициализации логирования: %w", err)
+		return fmt.Errorf("Ошибка инициализации логирования: %w", err)
 	}
 
 	cfg := config.NewConfig()
@@ -53,7 +53,7 @@ func runApp() error {
 	return nil
 }
 
-func initRepository(cfg config.Config) (interfaces.ShortenerRepositoryInterface, error) {
+func initRepository(cfg config.Config) (ports.ShortenerRepositoryInterface, error) {
 	if cfg.DataBaseDSN != "" {
 		shortenerRepository, err := repository.NewPgRepository(cfg)
 		if err != nil {
@@ -72,8 +72,8 @@ func initRepository(cfg config.Config) (interfaces.ShortenerRepositoryInterface,
 
 func setupRouter(shortenerHandler *handlers.ShortenerHandler) *chi.Mux {
 	route := chi.NewRouter()
-	route.Use(middlewares.LoggerMiddleware)
-	route.Use(middlewares.GZipMiddleware)
+	route.Use(middleware.LoggerMiddleware)
+	route.Use(middleware.GZipMiddleware)
 
 	route.Post("/", shortenerHandler.CreateURL)
 	route.Get("/{id}", shortenerHandler.GetURL)
