@@ -29,7 +29,7 @@ func NewPgRepository(ctg config.Config) (*PgRepository, error) {
 func createTable(db *sql.DB) error {
 	_, err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS shortener (
-			id VARCHAR(10) PRIMARY KEY,
+			id VARCHAR(100) PRIMARY KEY,
 			url VARCHAR(1024)
 		)
 	`)
