@@ -16,6 +16,13 @@ import (
 
 const randomStringLength = 8
 
+var (
+	CannotDecodeJson = "cannot decode request JSON body"
+	CannotEncodeJson = "error encoding response"
+	URLNotFound      = "url not found by id"
+	ErrorInsertBatch = "error insert urls by batch"
+)
+
 type ShortenerHandler struct {
 	service ports.ShortenerServiceInterface
 }
@@ -40,7 +47,7 @@ func (s ShortenerHandler) CreateURL(res http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	url := s.service.GenerateURL(body, randomStringLength)
+	url := s.service.GenerateURL(req.Context(), body, randomStringLength)
 
 	res.WriteHeader(http.StatusCreated)
 	res.Header().Set("content-type", "text/plain")
@@ -52,9 +59,9 @@ func (s ShortenerHandler) CreateURL(res http.ResponseWriter, req *http.Request) 
 func (s *ShortenerHandler) GetURL(res http.ResponseWriter, req *http.Request) {
 	id := chi.URLParam(req, "id")
 
-	url, ok := s.service.GetURLByID(id)
+	url, ok := s.service.GetURLByID(req.Context(), id)
 	if !ok {
-		logger.Log.Debug("url not found by id")
+		logger.Log.Debug(URLNotFound)
 		res.WriteHeader(http.StatusNotFound)
 		return
 	}
@@ -69,12 +76,12 @@ func (s *ShortenerHandler) AddNewURL(res http.ResponseWriter, req *http.Request)
 	var requestBody model.ShortenerRequest
 	dec := json.NewDecoder(req.Body)
 	if err := dec.Decode(&requestBody); err != nil {
-		logger.Log.Debug("cannot decode request JSON body", zap.Error(err))
+		logger.Log.Debug(CannotDecodeJson, zap.Error(err))
 		res.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	url := s.service.GenerateURL(requestBody.URL, randomStringLength)
+	url := s.service.GenerateURL(req.Context(), requestBody.URL, randomStringLength)
 
 	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(http.StatusCreated)
@@ -85,7 +92,7 @@ func (s *ShortenerHandler) AddNewURL(res http.ResponseWriter, req *http.Request)
 
 	enc := json.NewEncoder(res)
 	if err := enc.Encode(responseModel); err != nil {
-		logger.Log.Debug("error encoding response", zap.Error(err))
+		logger.Log.Debug(CannotEncodeJson, zap.Error(err))
 		return
 	}
 }
@@ -98,4 +105,30 @@ func (s ShortenerHandler) Ping(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (s ShortenerHandler) Batch(w http.ResponseWriter, r *http.Request) {
+	var batchUrlMapping []model.ShortenerURLMapping
+
+	dec := json.NewDecoder(r.Body)
+	if err := dec.Decode(&batchUrlMapping); err != nil {
+		logger.Log.Debug(CannotDecodeJson, zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	items, err := s.service.InsertURLs(r.Context(), batchUrlMapping)
+	if err != nil {
+		logger.Log.Debug(ErrorInsertBatch, zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+
+	if err := json.NewEncoder(w).Encode(items); err != nil {
+		logger.Log.Debug(CannotEncodeJson, zap.Error(err))
+		return
+	}
 }

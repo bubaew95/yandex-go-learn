@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/bubaew95/yandex-go-learn/config"
+	"github.com/bubaew95/yandex-go-learn/internal/core/model"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
@@ -53,16 +54,16 @@ func (p PgRepository) Ping() error {
 	return p.db.Ping()
 }
 
-func (p PgRepository) SetURL(id string, url string) {
-	p.db.ExecContext(context.Background(),
+func (p PgRepository) SetURL(ctx context.Context, id string, url string) {
+	p.db.ExecContext(ctx,
 		"INSERT INTO shortener (id, url) VALUES($1, $2)",
 		id, url)
 }
 
-func (p PgRepository) GetURLByID(id string) (string, bool) {
+func (p PgRepository) GetURLByID(ctx context.Context, id string) (string, bool) {
 	var url string
 
-	row := p.db.QueryRowContext(context.Background(),
+	row := p.db.QueryRowContext(ctx,
 		"SELECT url FROM shortener WHERE id = $1", id)
 	err := row.Scan(&url)
 	if err != nil {
@@ -72,6 +73,40 @@ func (p PgRepository) GetURLByID(id string) (string, bool) {
 	return url, true
 }
 
-func (p PgRepository) GetAllURL() map[string]string {
+func (p PgRepository) GetAllURL(ctx context.Context) map[string]string {
 	return nil
+}
+
+func (p PgRepository) InsertURLs(ctx context.Context, urls []model.ShortenerURLMapping) ([]model.ShortenerURLResponse, error) {
+	tx, err := p.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	defer tx.Rollback()
+
+	smtp, err := tx.PrepareContext(ctx, "INSERT INTO shortener (id, url) VALUES($1, $2) ON CONFLICT DO NOTHING")
+	if err != nil {
+		return nil, err
+	}
+	defer smtp.Close()
+
+	var responseURLs []model.ShortenerURLResponse
+	for _, v := range urls {
+		if isEmpty(v.CorrelationID) || isEmpty(v.OriginalURL) {
+			continue
+		}
+
+		_, err := smtp.ExecContext(ctx, v.CorrelationID, v.OriginalURL)
+		if err != nil {
+			return nil, err
+		}
+
+		responseURLs = append(responseURLs, model.ShortenerURLResponse{
+			CorrelationID: v.CorrelationID,
+			ShortURL:      v.OriginalURL,
+		})
+	}
+
+	return responseURLs, tx.Commit()
 }

@@ -1,11 +1,13 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"sync"
 
 	"github.com/bubaew95/yandex-go-learn/config"
+	"github.com/bubaew95/yandex-go-learn/internal/core/model"
 	"github.com/bubaew95/yandex-go-learn/internal/core/ports"
 )
 
@@ -23,7 +25,7 @@ func NewShortenerService(r ports.ShortenerRepositoryInterface, cfg config.Config
 	}
 }
 
-func (s *ShortenerService) GenerateURL(url string, randomStringLength int) string {
+func (s *ShortenerService) GenerateURL(ctx context.Context, url string, randomStringLength int) string {
 	s.mx.Lock()
 	defer s.mx.Unlock()
 
@@ -31,9 +33,9 @@ func (s *ShortenerService) GenerateURL(url string, randomStringLength int) strin
 	for {
 		genID = s.RandStringBytes(randomStringLength)
 
-		_, existsURL := s.repository.GetURLByID(genID)
+		_, existsURL := s.repository.GetURLByID(ctx, genID)
 		if !existsURL {
-			s.repository.SetURL(genID, url)
+			s.repository.SetURL(ctx, genID, url)
 			break
 		}
 	}
@@ -53,12 +55,12 @@ func (s ShortenerService) RandStringBytes(n int) string {
 	return string(b)
 }
 
-func (s ShortenerService) GetURLByID(id string) (string, bool) {
-	return s.repository.GetURLByID(id)
+func (s ShortenerService) GetURLByID(ctx context.Context, id string) (string, bool) {
+	return s.repository.GetURLByID(ctx, id)
 }
 
-func (s ShortenerService) GetAllURL() map[string]string {
-	return s.repository.GetAllURL()
+func (s ShortenerService) GetAllURL(ctx context.Context) map[string]string {
+	return s.repository.GetAllURL(ctx)
 }
 
 func (s ShortenerService) Ping() error {
@@ -67,4 +69,11 @@ func (s ShortenerService) Ping() error {
 
 func (s ShortenerService) generateResponseURL(id string) string {
 	return fmt.Sprintf("%s/%s", s.config.BaseURL, id)
+}
+
+func (s ShortenerService) InsertURLs(ctx context.Context, urls []model.ShortenerURLMapping) ([]model.ShortenerURLResponse, error) {
+	s.mx.Lock()
+	defer s.mx.Unlock()
+
+	return s.repository.InsertURLs(ctx, urls)
 }
