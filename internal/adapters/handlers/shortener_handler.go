@@ -17,8 +17,8 @@ import (
 const randomStringLength = 8
 
 var (
-	CannotDecodeJson = "cannot decode request JSON body"
-	CannotEncodeJson = "error encoding response"
+	CannotDecodeJSON = "cannot decode request JSON body"
+	CannotEncodeJSON = "error encoding response"
 	URLNotFound      = "url not found by id"
 	ErrorInsertBatch = "error insert urls by batch"
 )
@@ -76,7 +76,7 @@ func (s *ShortenerHandler) AddNewURL(res http.ResponseWriter, req *http.Request)
 	var requestBody model.ShortenerRequest
 	dec := json.NewDecoder(req.Body)
 	if err := dec.Decode(&requestBody); err != nil {
-		logger.Log.Debug(CannotDecodeJson, zap.Error(err))
+		logger.Log.Debug(CannotDecodeJSON, zap.Error(err))
 		res.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -92,7 +92,7 @@ func (s *ShortenerHandler) AddNewURL(res http.ResponseWriter, req *http.Request)
 
 	enc := json.NewEncoder(res)
 	if err := enc.Encode(responseModel); err != nil {
-		logger.Log.Debug(CannotEncodeJson, zap.Error(err))
+		logger.Log.Debug(CannotEncodeJSON, zap.Error(err))
 		return
 	}
 }
@@ -108,16 +108,16 @@ func (s ShortenerHandler) Ping(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s ShortenerHandler) Batch(w http.ResponseWriter, r *http.Request) {
-	var batchUrlMapping []model.ShortenerURLMapping
+	var batchURLMapping []model.ShortenerURLMapping
 
 	dec := json.NewDecoder(r.Body)
-	if err := dec.Decode(&batchUrlMapping); err != nil {
-		logger.Log.Debug(CannotDecodeJson, zap.Error(err))
+	if err := dec.Decode(&batchURLMapping); err != nil {
+		logger.Log.Debug(CannotDecodeJSON, zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	items, err := s.service.InsertURLs(r.Context(), batchUrlMapping)
+	items, err := s.service.InsertURLs(r.Context(), batchURLMapping)
 	if err != nil {
 		logger.Log.Debug(ErrorInsertBatch, zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -128,7 +128,7 @@ func (s ShortenerHandler) Batch(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 
 	if err := json.NewEncoder(w).Encode(items); err != nil {
-		logger.Log.Debug(CannotEncodeJson, zap.Error(err))
+		logger.Log.Debug(CannotEncodeJSON, zap.Error(err))
 		return
 	}
 }
