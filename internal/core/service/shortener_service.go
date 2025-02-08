@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"strings"
 	"sync"
 
 	"github.com/bubaew95/yandex-go-learn/config"
@@ -72,8 +73,31 @@ func (s ShortenerService) generateResponseURL(id string) string {
 }
 
 func (s ShortenerService) InsertURLs(ctx context.Context, urls []model.ShortenerURLMapping) ([]model.ShortenerURLResponse, error) {
-	s.mx.Lock()
-	defer s.mx.Unlock()
+	var items []model.ShortenerURLMapping
+	for _, v := range urls {
+		if isEmpty(v.CorrelationID) || isEmpty(v.OriginalURL) {
+			continue
+		}
 
-	return s.repository.InsertURLs(ctx, urls)
+		items = append(items, v)
+	}
+
+	err := s.repository.InsertURLs(ctx, items)
+	if err != nil {
+		return nil, err
+	}
+
+	var responseURLs []model.ShortenerURLResponse
+	for _, v := range items {
+		responseURLs = append(responseURLs, model.ShortenerURLResponse{
+			CorrelationID: v.CorrelationID,
+			ShortURL:      s.generateResponseURL(v.CorrelationID),
+		})
+	}
+
+	return responseURLs, nil
+}
+
+func isEmpty(t string) bool {
+	return strings.TrimSpace(t) == ""
 }

@@ -55,26 +55,15 @@ func (s ShortenerRepository) Ping() error {
 	return nil
 }
 
-func (s ShortenerRepository) InsertURLs(ctx context.Context, urls []model.ShortenerURLMapping) ([]model.ShortenerURLResponse, error) {
-	var responseURLs []model.ShortenerURLResponse
-
+func (s ShortenerRepository) InsertURLs(ctx context.Context, urls []model.ShortenerURLMapping) error {
 	for _, v := range urls {
-		if isEmpty(v.CorrelationID) || isEmpty(v.OriginalURL) {
-			continue
-		}
-
 		_, existsURL := s.GetURLByID(ctx, v.CorrelationID)
 		if existsURL {
 			continue
 		}
 
 		s.SetURL(ctx, v.CorrelationID, v.OriginalURL)
-
-		responseURLs = append(responseURLs, model.ShortenerURLResponse{
-			CorrelationID: v.CorrelationID,
-			ShortURL:      v.OriginalURL,
-		})
 	}
 
-	return responseURLs, nil
+	return nil
 }

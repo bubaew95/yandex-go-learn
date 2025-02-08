@@ -77,36 +77,26 @@ func (p PgRepository) GetAllURL(ctx context.Context) map[string]string {
 	return nil
 }
 
-func (p PgRepository) InsertURLs(ctx context.Context, urls []model.ShortenerURLMapping) ([]model.ShortenerURLResponse, error) {
+func (p PgRepository) InsertURLs(ctx context.Context, urls []model.ShortenerURLMapping) error {
 	tx, err := p.db.Begin()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	defer tx.Rollback()
 
 	smtp, err := tx.PrepareContext(ctx, "INSERT INTO shortener (id, url) VALUES($1, $2) ON CONFLICT DO NOTHING")
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer smtp.Close()
 
-	var responseURLs []model.ShortenerURLResponse
 	for _, v := range urls {
-		if isEmpty(v.CorrelationID) || isEmpty(v.OriginalURL) {
-			continue
-		}
-
 		_, err := smtp.ExecContext(ctx, v.CorrelationID, v.OriginalURL)
 		if err != nil {
-			return nil, err
+			return err
 		}
-
-		responseURLs = append(responseURLs, model.ShortenerURLResponse{
-			CorrelationID: v.CorrelationID,
-			ShortURL:      v.OriginalURL,
-		})
 	}
 
-	return responseURLs, tx.Commit()
+	return tx.Commit()
 }
