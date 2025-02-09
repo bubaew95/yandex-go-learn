@@ -272,9 +272,8 @@ func TestHandlerBatch(t *testing.T) {
 	}
 
 	cfg := &config.Config{
-		Port:        "9090",
-		BaseURL:     "https://site.local",
-		DataBaseDSN: "host=127.0.0.1 user=admin password=admin dbname=yandex sslmode=disable",
+		Port:    "9090",
+		BaseURL: "https://site.local",
 	}
 
 	shortenerRepository, err := repository.NewPgRepository(*cfg)
