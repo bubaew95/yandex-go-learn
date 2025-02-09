@@ -233,3 +233,75 @@ func TestHandlerAddNewURLFromJson(t *testing.T) {
 		})
 	}
 }
+
+func TestHandlerBatch(t *testing.T) {
+	type want struct {
+		status int
+		result string
+	}
+
+	tests := []struct {
+		name string
+		data string
+		want want
+	}{
+		{
+			name: "Add urls success",
+			data: `[ { "correlation_id": "test-1", "original_url": "http://google.com" }, { "correlation_id": "test-2", "original_url": "http://yandex.ru" }, { "correlation_id": "test-3", "original_url": "http://yandex.ru" } ]`,
+			want: want{
+				status: http.StatusCreated,
+				result: `[ { "correlation_id": "test-1", "short_url": "https://site.local/test-1" }, { "correlation_id": "test-2", "short_url": "https://site.local/test-2" }, { "correlation_id": "test-3", "short_url": "https://site.local/test-3" } ]`,
+			},
+		},
+		{
+			name: "Dublicate CorrelationId",
+			data: `[{ "correlation_id": "test-1", "original_url": "http://google.com" }, { "correlation_id": "test-1", "original_url": "http://yandex.ru" }]`,
+			want: want{
+				status: http.StatusCreated,
+				result: `[{ "correlation_id": "test-1", "short_url": "https://site.local/test-1" }, { "correlation_id": "test-1", "short_url": "https://site.local/test-1" }]`,
+			},
+		},
+		{
+			name: "Empty data",
+			data: "",
+			want: want{
+				status: http.StatusInternalServerError,
+				result: "",
+			},
+		},
+	}
+
+	cfg := &config.Config{
+		Port:        "9090",
+		BaseURL:     "https://site.local",
+		DataBaseDSN: "host=127.0.0.1 user=admin password=admin dbname=yandex sslmode=disable",
+	}
+
+	shortenerRepository, err := repository.NewPgRepository(*cfg)
+	require.NoError(t, err)
+
+	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
+	shortenerHandler := NewShortenerHandler(shortenerService)
+
+	router := chi.NewRouter()
+	router.Post("/api/shorten/batch", shortenerHandler.Batch)
+
+	ts := httptest.NewServer(router)
+	defer ts.Close()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req, err := http.Post(ts.URL+"/api/shorten/batch", "application/json", strings.NewReader(tt.data))
+			require.NoError(t, err)
+			defer req.Body.Close()
+
+			respBody, err := io.ReadAll(req.Body)
+			require.NoError(t, err)
+
+			assert.Equal(t, tt.want.status, req.StatusCode)
+			if tt.want.result != "" {
+				assert.JSONEq(t, tt.want.result, string(respBody))
+			}
+		})
+	}
+}
