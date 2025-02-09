@@ -26,7 +26,7 @@ func (s ShortenerRepository) Close() error {
 	return s.shortenerDB.Close()
 }
 
-func (s ShortenerRepository) SetURL(ctx context.Context, id string, url string) {
+func (s ShortenerRepository) SetURL(ctx context.Context, id string, url string) error {
 	s.cache[id] = url
 
 	data := &model.ShortenURL{
@@ -39,6 +39,8 @@ func (s ShortenerRepository) SetURL(ctx context.Context, id string, url string) 
 	if err != nil {
 		logger.Log.Debug(fmt.Sprintf("Не удалось записать данные в файл. Ошибка: %s", err.Error()))
 	}
+
+	return err
 }
 
 func (s ShortenerRepository) GetURLByID(ctx context.Context, id string) (string, bool) {

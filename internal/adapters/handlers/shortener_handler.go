@@ -47,7 +47,12 @@ func (s ShortenerHandler) CreateURL(res http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	url := s.service.GenerateURL(req.Context(), body, randomStringLength)
+	url, err := s.service.GenerateURL(req.Context(), body, randomStringLength)
+	if err != nil {
+		logger.Log.Debug("Generate url error", zap.Error(err))
+		res.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	res.WriteHeader(http.StatusCreated)
 	res.Header().Set("content-type", "text/plain")
@@ -81,7 +86,12 @@ func (s *ShortenerHandler) AddNewURL(res http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	url := s.service.GenerateURL(req.Context(), requestBody.URL, randomStringLength)
+	url, err := s.service.GenerateURL(req.Context(), requestBody.URL, randomStringLength)
+	if err != nil {
+		logger.Log.Debug("Generate url error", zap.Error(err))
+		res.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(http.StatusCreated)

@@ -7,7 +7,7 @@ import (
 )
 
 type ShortenerServiceInterface interface {
-	GenerateURL(ctx context.Context, url string, randomStringLength int) string
+	GenerateURL(ctx context.Context, url string, randomStringLength int) (string, error)
 	GetURLByID(ctx context.Context, id string) (string, bool)
 	GetAllURL(ctx context.Context) map[string]string
 	InsertURLs(ctx context.Context, urls []model.ShortenerURLMapping) ([]model.ShortenerURLResponse, error)

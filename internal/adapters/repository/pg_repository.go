@@ -54,10 +54,12 @@ func (p PgRepository) Ping() error {
 	return p.db.Ping()
 }
 
-func (p PgRepository) SetURL(ctx context.Context, id string, url string) {
-	p.db.ExecContext(ctx,
+func (p PgRepository) SetURL(ctx context.Context, id string, url string) error {
+	_, err := p.db.ExecContext(ctx,
 		"INSERT INTO shortener (id, url) VALUES($1, $2)",
 		id, url)
+
+	return err
 }
 
 func (p PgRepository) GetURLByID(ctx context.Context, id string) (string, bool) {

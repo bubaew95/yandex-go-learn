@@ -26,7 +26,7 @@ func NewShortenerService(r ports.ShortenerRepositoryInterface, cfg config.Config
 	}
 }
 
-func (s *ShortenerService) GenerateURL(ctx context.Context, url string, randomStringLength int) string {
+func (s *ShortenerService) GenerateURL(ctx context.Context, url string, randomStringLength int) (string, error) {
 	s.mx.Lock()
 	defer s.mx.Unlock()
 
@@ -36,12 +36,16 @@ func (s *ShortenerService) GenerateURL(ctx context.Context, url string, randomSt
 
 		_, existsURL := s.repository.GetURLByID(ctx, genID)
 		if !existsURL {
-			s.repository.SetURL(ctx, genID, url)
+			err := s.repository.SetURL(ctx, genID, url)
+			if err != nil {
+				return "", err
+			}
+			
 			break
 		}
 	}
 
-	return s.generateResponseURL(genID)
+	return s.generateResponseURL(genID), nil
 }
 
 func (s ShortenerService) RandStringBytes(n int) string {
