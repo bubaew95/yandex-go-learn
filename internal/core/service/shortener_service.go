@@ -40,7 +40,7 @@ func (s *ShortenerService) GenerateURL(ctx context.Context, url string, randomSt
 			if err != nil {
 				return "", err
 			}
-			
+
 			break
 		}
 	}
