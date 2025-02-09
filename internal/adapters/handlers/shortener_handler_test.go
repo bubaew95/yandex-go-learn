@@ -11,11 +11,13 @@ import (
 	"testing"
 
 	"github.com/bubaew95/yandex-go-learn/config"
-	"github.com/bubaew95/yandex-go-learn/internal/models"
-	"github.com/bubaew95/yandex-go-learn/internal/repository"
-	"github.com/bubaew95/yandex-go-learn/internal/service"
-	"github.com/bubaew95/yandex-go-learn/internal/storage"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/mock"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/storage"
+	"github.com/bubaew95/yandex-go-learn/internal/core/model"
+	"github.com/bubaew95/yandex-go-learn/internal/core/service"
 	"github.com/go-chi/chi/v5"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -134,12 +136,12 @@ func TestHandlerGet(t *testing.T) {
 	shortenerDB, _ := storage.NewShortenerDB(*cfg)
 	defer os.Remove(cfg.FilePath)
 
-	shortenerDB.Save(&models.ShortenURL{
+	shortenerDB.Save(&model.ShortenURL{
 		UUID:        1,
 		ShortURL:    "WzYAhS",
 		OriginalURL: "https://practicum.yandex.ru/learn",
 	})
-	shortenerDB.Save(&models.ShortenURL{
+	shortenerDB.Save(&model.ShortenURL{
 		UUID:        2,
 		ShortURL:    "WzYAhSs",
 		OriginalURL: "https://practicum.yandex.ru/learn",
@@ -222,7 +224,7 @@ func TestHandlerAddNewURLFromJson(t *testing.T) {
 			respBody, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 
-			var responseModel models.ShortenerResponse
+			var responseModel model.ShortenerResponse
 			err = json.Unmarshal(respBody, &responseModel)
 			require.NoError(t, err)
 
@@ -230,6 +232,79 @@ func TestHandlerAddNewURLFromJson(t *testing.T) {
 			assert.Equal(t, resp.StatusCode, tt.want.status)
 			assert.Equal(t, resp.Header.Get("content-length"), tt.want.contentLength)
 			assert.Equal(t, resp.Header.Get("content-type"), tt.want.contentType)
+		})
+	}
+}
+
+func TestHandlerBatch(t *testing.T) {
+	type want struct {
+		status int
+		result string
+	}
+
+	tests := []struct {
+		name string
+		data string
+		want want
+	}{
+		{
+			name: "Add urls success",
+			data: `[ { "correlation_id": "test-1", "original_url": "http://google.com" }, { "correlation_id": "test-2", "original_url": "http://yandex.ru" }, { "correlation_id": "test-3", "original_url": "http://yandex.ru" } ]`,
+			want: want{
+				status: http.StatusCreated,
+				result: `[ { "correlation_id": "test-1", "short_url": "https://site.local/test-1" }, { "correlation_id": "test-2", "short_url": "https://site.local/test-2" }, { "correlation_id": "test-3", "short_url": "https://site.local/test-3" } ]`,
+			},
+		},
+		{
+			name: "Dublicate CorrelationId",
+			data: `[{ "correlation_id": "test-1", "original_url": "http://google.com" }, { "correlation_id": "test-1", "original_url": "http://yandex.ru" }]`,
+			want: want{
+				status: http.StatusCreated,
+				result: `[{ "correlation_id": "test-1", "short_url": "https://site.local/test-1" }, { "correlation_id": "test-1", "short_url": "https://site.local/test-1" }]`,
+			},
+		},
+	}
+
+	cfg := &config.Config{
+		BaseURL: "https://site.local",
+	}
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	shortenerRepository := mock.NewMockShortenerRepositoryInterface(ctrl)
+	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
+	shortenerHandler := NewShortenerHandler(shortenerService)
+
+	router := chi.NewRouter()
+	router.Post("/api/shorten/batch", shortenerHandler.Batch)
+
+	ts := httptest.NewServer(router)
+	defer ts.Close()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var items []model.ShortenerURLMapping
+			if tt.data != "" {
+				err := json.Unmarshal([]byte(tt.data), &items)
+				require.NoError(t, err)
+			}
+
+			shortenerRepository.EXPECT().
+				InsertURLs(gomock.Any(), items).
+				Return(nil)
+
+			req, err := http.Post(ts.URL+"/api/shorten/batch", "application/json", strings.NewReader(tt.data))
+			require.NoError(t, err)
+			defer req.Body.Close()
+
+			respBody, err := io.ReadAll(req.Body)
+			require.NoError(t, err)
+
+			assert.Equal(t, tt.want.status, req.StatusCode)
+			if tt.want.result != "" {
+				assert.JSONEq(t, tt.want.result, string(respBody))
+			}
 		})
 	}
 }
