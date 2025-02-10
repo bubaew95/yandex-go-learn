@@ -97,6 +97,8 @@ func (s *ShortenerHandler) AddNewURL(res http.ResponseWriter, req *http.Request)
 				Result: originURL,
 			}
 
+			logger.Log.Debug(fmt.Sprintf("Dublicate %v - %s", responseModel, requestBody.URL))
+
 			writeJSONResponse(res, http.StatusConflict, responseModel, logger.Log)
 			return
 		}
