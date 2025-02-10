@@ -52,16 +52,21 @@ func (s ShortenerHandler) CreateURL(res http.ResponseWriter, req *http.Request) 
 
 	url, err := s.service.GenerateURL(req.Context(), body, randomStringLength)
 	if err != nil {
+		if errors.Is(err, ports.ErrUniqueIndex) {
+			originURL, _ := s.service.GetURLByOriginalURL(req.Context(), body)
+
+			logger.Log.Debug(fmt.Sprintf("Dublicate %s - %s", originURL, body))
+
+			writeByteResponse(res, http.StatusCreated, []byte(originURL))
+			return
+		}
+
 		logger.Log.Debug("Generate url error", zap.Error(err))
 		res.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	res.WriteHeader(http.StatusCreated)
-	res.Header().Set("content-type", "text/plain")
-	res.Header().Set("content-length", strconv.Itoa(len(url)))
-
-	res.Write([]byte(url))
+	writeByteResponse(res, http.StatusCreated, []byte(url))
 }
 
 func (s *ShortenerHandler) GetURL(res http.ResponseWriter, req *http.Request) {
@@ -152,4 +157,12 @@ func writeJSONResponse(res http.ResponseWriter, statusCode int, data interface{}
 	if err := json.NewEncoder(res).Encode(data); err != nil {
 		logger.Debug("Cannot encode JSON", zap.Error(err))
 	}
+}
+
+func writeByteResponse(res http.ResponseWriter, statusCode int, data []byte) {
+	res.WriteHeader(http.StatusCreated)
+	res.Header().Set("content-type", "text/plain")
+	res.Header().Set("content-length", strconv.Itoa(len(data)))
+
+	res.Write(data)
 }
