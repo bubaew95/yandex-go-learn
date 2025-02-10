@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/bubaew95/yandex-go-learn/internal/models"
+	"github.com/bubaew95/yandex-go-learn/internal/core/model"
 )
 
 func ReadShorteners(filename string) (map[string]string, error) {
@@ -29,7 +29,7 @@ func ReadShorteners(filename string) (map[string]string, error) {
 			return nil, err
 		}
 
-		var s models.ShortenURL
+		var s model.ShortenURL
 		err = json.Unmarshal([]byte(line), &s)
 		if err != nil {
 			return nil, err

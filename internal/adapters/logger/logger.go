@@ -1,11 +1,16 @@
 package logger
 
-import "go.uber.org/zap"
+import (
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+)
 
 var Log *zap.Logger = zap.NewNop()
 
 func Initialize() error {
 	cfg := zap.NewProductionConfig()
+
+	cfg.Level.SetLevel(zapcore.DebugLevel)
 
 	zl, err := cfg.Build()
 	if err != nil {
