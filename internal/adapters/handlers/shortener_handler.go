@@ -160,7 +160,7 @@ func writeJSONResponse(res http.ResponseWriter, statusCode int, data interface{}
 }
 
 func writeByteResponse(res http.ResponseWriter, statusCode int, data []byte) {
-	res.WriteHeader(http.StatusCreated)
+	res.WriteHeader(statusCode)
 	res.Header().Set("content-type", "text/plain")
 	res.Header().Set("content-length", strconv.Itoa(len(data)))
 
