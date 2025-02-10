@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,6 +13,8 @@ import (
 	"github.com/bubaew95/yandex-go-learn/internal/core/ports"
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
+
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 const randomStringLength = 8
@@ -79,8 +82,8 @@ func (s *ShortenerHandler) GetURL(res http.ResponseWriter, req *http.Request) {
 
 func (s *ShortenerHandler) AddNewURL(res http.ResponseWriter, req *http.Request) {
 	var requestBody model.ShortenerRequest
-	dec := json.NewDecoder(req.Body)
-	if err := dec.Decode(&requestBody); err != nil {
+
+	if err := json.NewDecoder(req.Body).Decode(&requestBody); err != nil {
 		logger.Log.Debug(CannotDecodeJSON, zap.Error(err))
 		res.WriteHeader(http.StatusInternalServerError)
 		return
@@ -88,23 +91,26 @@ func (s *ShortenerHandler) AddNewURL(res http.ResponseWriter, req *http.Request)
 
 	url, err := s.service.GenerateURL(req.Context(), requestBody.URL, randomStringLength)
 	if err != nil {
+		if errors.Is(err, ports.ErrUniqueIndex) {
+			originURL, _ := s.service.GetURLByOriginalURL(req.Context(), requestBody.URL)
+			responseModel := model.ShortenerResponse{
+				Result: originURL,
+			}
+
+			writeJSONResponse(res, http.StatusConflict, responseModel, logger.Log)
+			return
+		}
+
 		logger.Log.Debug("Generate url error", zap.Error(err))
 		res.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	res.Header().Set("Content-Type", "application/json")
-	res.WriteHeader(http.StatusCreated)
-
 	responseModel := model.ShortenerResponse{
 		Result: url,
 	}
 
-	enc := json.NewEncoder(res)
-	if err := enc.Encode(responseModel); err != nil {
-		logger.Log.Debug(CannotEncodeJSON, zap.Error(err))
-		return
-	}
+	writeJSONResponse(res, http.StatusCreated, responseModel, logger.Log)
 }
 
 func (s ShortenerHandler) Ping(w http.ResponseWriter, r *http.Request) {
@@ -134,11 +140,14 @@ func (s ShortenerHandler) Batch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	writeJSONResponse(w, http.StatusCreated, items, logger.Log)
+}
 
-	if err := json.NewEncoder(w).Encode(items); err != nil {
-		logger.Log.Debug(CannotEncodeJSON, zap.Error(err))
-		return
+func writeJSONResponse(res http.ResponseWriter, statusCode int, data interface{}, logger *zap.Logger) {
+	res.Header().Set("Content-Type", "application/json")
+	res.WriteHeader(statusCode)
+
+	if err := json.NewEncoder(res).Encode(data); err != nil {
+		logger.Debug("Cannot encode JSON", zap.Error(err))
 	}
 }

@@ -49,6 +49,10 @@ func (s ShortenerRepository) GetURLByID(ctx context.Context, id string) (string,
 	return url, ok
 }
 
+func (s ShortenerRepository) GetURLByOriginalURL(ctx context.Context, originalURL string) (string, bool) {
+	return "", false
+}
+
 func (s ShortenerRepository) GetAllURL(ctx context.Context) map[string]string {
 	return s.cache
 }
