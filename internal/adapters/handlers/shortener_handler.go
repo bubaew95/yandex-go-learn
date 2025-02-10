@@ -57,7 +57,7 @@ func (s ShortenerHandler) CreateURL(res http.ResponseWriter, req *http.Request) 
 
 			logger.Log.Debug(fmt.Sprintf("Dublicate %s - %s", originURL, body))
 
-			writeByteResponse(res, http.StatusCreated, []byte(originURL))
+			writeByteResponse(res, http.StatusConflict, []byte(originURL))
 			return
 		}
 
