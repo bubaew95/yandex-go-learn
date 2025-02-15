@@ -2,6 +2,6 @@ package ports
 
 import "context"
 
-type UserRepositoryInterface interface {
+type UserRepository interface {
 	GetUserURLS(ctx context.Context, id string)
 }

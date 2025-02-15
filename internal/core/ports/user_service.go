@@ -2,6 +2,6 @@ package ports
 
 import "context"
 
-type UserServiceInterface interface {
+type UserService interface {
 	GetUserURLS(ctx context.Context, id string)
 }
