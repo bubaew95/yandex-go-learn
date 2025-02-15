@@ -46,12 +46,14 @@ func (s ShortenerHandler) CreateURL(res http.ResponseWriter, req *http.Request) 
 	url, err := s.service.GenerateURL(req.Context(), body, randomStringLength)
 	if err != nil {
 		if errors.Is(err, ports.ErrUniqueIndex) {
-			originURL, _ := s.service.GetURLByOriginalURL(req.Context(), body)
+			originURL, ok := s.service.GetURLByOriginalURL(req.Context(), body)
 
-			logger.Log.Debug("Duplicate", zap.String("originURL", originURL), zap.String("bodyUrl", body))
+			if ok {
+				logger.Log.Debug("Duplicate", zap.String("originURL", originURL), zap.String("bodyUrl", body))
 
-			writeByteResponse(res, http.StatusConflict, []byte(originURL))
-			return
+				writeByteResponse(res, http.StatusConflict, []byte(originURL))
+				return
+			}
 		}
 
 		logger.Log.Debug("Generate url error", zap.Error(err))
@@ -88,13 +90,15 @@ func (s *ShortenerHandler) AddNewURL(res http.ResponseWriter, req *http.Request)
 	url, err := s.service.GenerateURL(req.Context(), requestBody.URL, randomStringLength)
 	if err != nil {
 		if errors.Is(err, ports.ErrUniqueIndex) {
-			originURL, _ := s.service.GetURLByOriginalURL(req.Context(), requestBody.URL)
-			responseModel := model.ShortenerResponse{
-				Result: originURL,
-			}
+			originURL, ok := s.service.GetURLByOriginalURL(req.Context(), requestBody.URL)
+			if ok {
+				responseModel := model.ShortenerResponse{
+					Result: originURL,
+				}
 
-			writeJSONResponse(res, http.StatusConflict, responseModel, logger.Log)
-			return
+				writeJSONResponse(res, http.StatusConflict, responseModel, logger.Log)
+				return
+			}
 		}
 
 		logger.Log.Debug("Url generation error", zap.Error(err))
