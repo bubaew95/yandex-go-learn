@@ -7,7 +7,7 @@ import (
 	"github.com/bubaew95/yandex-go-learn/internal/core/model"
 )
 
-type ShortenerRepositoryInterface interface {
+type ShortenerRepository interface {
 	GetURLByID(ctx context.Context, id string) (string, bool)
 	GetURLByOriginalURL(ctx context.Context, originalURL string) (string, bool)
 	SetURL(ctx context.Context, id string, url string) error

@@ -20,10 +20,10 @@ import (
 const randomStringLength = 8
 
 type ShortenerHandler struct {
-	service ports.ShortenerServiceInterface
+	service ports.ShortenerService
 }
 
-func NewShortenerHandler(s ports.ShortenerServiceInterface) *ShortenerHandler {
+func NewShortenerHandler(s ports.ShortenerService) *ShortenerHandler {
 	return &ShortenerHandler{
 		service: s,
 	}

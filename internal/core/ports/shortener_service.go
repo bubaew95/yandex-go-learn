@@ -6,7 +6,7 @@ import (
 	"github.com/bubaew95/yandex-go-learn/internal/core/model"
 )
 
-type ShortenerServiceInterface interface {
+type ShortenerService interface {
 	GenerateURL(ctx context.Context, url string, randomStringLength int) (string, error)
 	GetURLByID(ctx context.Context, id string) (string, bool)
 	GetURLByOriginalURL(ctx context.Context, originalURL string) (string, bool)

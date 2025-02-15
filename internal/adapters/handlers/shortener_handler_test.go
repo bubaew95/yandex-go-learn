@@ -293,10 +293,8 @@ func TestHandlerBatch(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var items []model.ShortenerURLMapping
-			if tt.data != "" {
-				err := json.Unmarshal([]byte(tt.data), &items)
-				require.NoError(t, err)
-			}
+			err := json.Unmarshal([]byte(tt.data), &items)
+			require.NoError(t, err)
 
 			shortenerRepository.EXPECT().
 				InsertURLs(gomock.Any(), items).

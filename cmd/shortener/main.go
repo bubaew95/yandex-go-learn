@@ -51,7 +51,7 @@ func runApp() error {
 	return nil
 }
 
-func initRepository(cfg config.Config) (ports.ShortenerRepositoryInterface, error) {
+func initRepository(cfg config.Config) (ports.ShortenerRepository, error) {
 	if cfg.DataBaseDSN != "" {
 		shortenerRepository, err := repository.NewPgRepository(cfg)
 		if err != nil {

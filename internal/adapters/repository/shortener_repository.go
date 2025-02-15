@@ -2,15 +2,17 @@ package repository
 
 import (
 	"context"
-	"fmt"
+	"strings"
+	"sync"
 
-	"github.com/bubaew95/yandex-go-learn/internal/adapters/logger"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/storage"
 	"github.com/bubaew95/yandex-go-learn/internal/core/model"
+	"github.com/bubaew95/yandex-go-learn/internal/core/ports"
 )
 
 type ShortenerRepository struct {
 	shortenerDB storage.ShortenerDB
+	mx          *sync.RWMutex
 	cache       map[string]string
 }
 
@@ -18,6 +20,7 @@ func NewShortenerRepository(s storage.ShortenerDB) *ShortenerRepository {
 	data, _ := s.Load()
 	return &ShortenerRepository{
 		shortenerDB: s,
+		mx:          &sync.RWMutex{},
 		cache:       data,
 	}
 }
@@ -27,6 +30,12 @@ func (s ShortenerRepository) Close() error {
 }
 
 func (s ShortenerRepository) SetURL(ctx context.Context, id string, url string) error {
+	for _, v := range s.cache {
+		if strings.Contains(v, url) {
+			return ports.ErrUniqueIndex
+		}
+	}
+
 	s.cache[id] = url
 
 	data := &model.ShortenURL{
@@ -35,21 +44,27 @@ func (s ShortenerRepository) SetURL(ctx context.Context, id string, url string) 
 		OriginalURL: url,
 	}
 
-	err := s.shortenerDB.Save(data)
-	if err != nil {
-		logger.Log.Debug(fmt.Sprintf("Не удалось записать данные в файл. Ошибка: %s", err.Error()))
-	}
-
-	return err
+	return s.shortenerDB.Save(data)
 }
 
 func (s ShortenerRepository) GetURLByID(ctx context.Context, id string) (string, bool) {
-	url, ok := s.cache[id]
+	s.mx.RLock()
+	defer s.mx.RUnlock()
 
+	url, ok := s.cache[id]
 	return url, ok
 }
 
 func (s ShortenerRepository) GetURLByOriginalURL(ctx context.Context, originalURL string) (string, bool) {
+	s.mx.RLock()
+	defer s.mx.RUnlock()
+
+	for id, v := range s.cache {
+		if strings.Contains(v, originalURL) {
+			return id, true
+		}
+	}
+
 	return "", false
 }
 
