@@ -23,6 +23,8 @@ import (
 )
 
 func TestHandlerCreate(t *testing.T) {
+	t.Parallel()
+
 	type want struct {
 		contentType string
 		statusCode  int
@@ -94,6 +96,8 @@ func TestHandlerCreate(t *testing.T) {
 }
 
 func TestHandlerGet(t *testing.T) {
+	t.Parallel()
+
 	type want struct {
 		contentType string
 		statusCode  int
@@ -169,6 +173,8 @@ func TestHandlerGet(t *testing.T) {
 }
 
 func TestHandlerAddNewURLFromJson(t *testing.T) {
+	t.Parallel()
+
 	type want struct {
 		contentType   string
 		contentLength string
@@ -237,6 +243,8 @@ func TestHandlerAddNewURLFromJson(t *testing.T) {
 }
 
 func TestHandlerBatch(t *testing.T) {
+	t.Parallel()
+
 	type want struct {
 		status int
 		result string
