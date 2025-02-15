@@ -22,7 +22,7 @@ type closer interface {
 
 func main() {
 	if err := runApp(); err != nil {
-		logger.Log.Fatal("Application startup error", zap.String("error", err.Error()))
+		logger.Log.Fatal("Application startup error", zap.Error(err))
 	}
 }
 
@@ -55,7 +55,7 @@ func initRepository(cfg config.Config) (ports.ShortenerRepositoryInterface, erro
 	if cfg.DataBaseDSN != "" {
 		shortenerRepository, err := repository.NewPgRepository(cfg)
 		if err != nil {
-			logger.Log.Fatal("Database initialization error", zap.String("error", err.Error()))
+			logger.Log.Fatal("Database initialization error", zap.Error(err))
 		}
 
 		return shortenerRepository, nil
@@ -87,6 +87,6 @@ func setupRouter(shortenerHandler *handlers.ShortenerHandler) *chi.Mux {
 
 func safeClose(c closer) {
 	if err := c.Close(); err != nil {
-		logger.Log.Error("Error when closing a resource", zap.String("error", err.Error()))
+		logger.Log.Error("Error when closing a resource", zap.Error(err))
 	}
 }
