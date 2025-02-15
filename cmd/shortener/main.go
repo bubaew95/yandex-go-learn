@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/bubaew95/yandex-go-learn/config"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/handlers"
@@ -23,14 +22,13 @@ type closer interface {
 
 func main() {
 	if err := runApp(); err != nil {
-		logger.Log.Fatal(fmt.Sprintf("Ошибка запуска приложения: %v", err))
-		os.Exit(1)
+		logger.Log.Fatal("Application startup error", zap.String("error", err.Error()))
 	}
 }
 
 func runApp() error {
 	if err := logger.Initialize(); err != nil {
-		return fmt.Errorf("ошибка инициализации логирования: %w", err)
+		return fmt.Errorf("logging initialization error: %w", err)
 	}
 
 	cfg := config.NewConfig()
@@ -47,7 +45,7 @@ func runApp() error {
 
 	logger.Log.Info("Running server", zap.String("port", cfg.Port))
 	if err := http.ListenAndServe(cfg.Port, route); err != nil {
-		return fmt.Errorf("ошибка запуска сервера: %w", err)
+		return fmt.Errorf("server startup error: %w", err)
 	}
 
 	return nil
@@ -57,7 +55,7 @@ func initRepository(cfg config.Config) (ports.ShortenerRepositoryInterface, erro
 	if cfg.DataBaseDSN != "" {
 		shortenerRepository, err := repository.NewPgRepository(cfg)
 		if err != nil {
-			logger.Log.Fatal(fmt.Sprintf("Ошибка инициализации базы данных: %v", err))
+			logger.Log.Fatal("Database initialization error", zap.String("error", err.Error()))
 		}
 
 		return shortenerRepository, nil
@@ -65,7 +63,7 @@ func initRepository(cfg config.Config) (ports.ShortenerRepositoryInterface, erro
 
 	shortenerDB, err := storage.NewShortenerDB(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("ошибка инициализации файла базы данных: %w", err)
+		return nil, fmt.Errorf("database file initialization error: %w", err)
 	}
 	return repository.NewShortenerRepository(*shortenerDB), nil
 }
@@ -89,6 +87,6 @@ func setupRouter(shortenerHandler *handlers.ShortenerHandler) *chi.Mux {
 
 func safeClose(c closer) {
 	if err := c.Close(); err != nil {
-		logger.Log.Error(fmt.Sprintf("Ошибка при закрытии ресурса: %v", err))
+		logger.Log.Error("Error when closing a resource", zap.String("error", err.Error()))
 	}
 }
