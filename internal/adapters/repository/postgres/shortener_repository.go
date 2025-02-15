@@ -104,7 +104,7 @@ func (p ShortenerRepository) InsertURLs(ctx context.Context, urls []model.Shorte
 	if err != nil {
 		return err
 	}
-
+	fmt.Println(urls)
 	defer tx.Rollback()
 
 	smtp, err := tx.PrepareContext(ctx, "INSERT INTO shortener (id, url) VALUES($1, $2) ON CONFLICT DO NOTHING")

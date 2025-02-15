@@ -13,12 +13,12 @@ import (
 )
 
 type ShortenerService struct {
-	repository ports.ShortenerRepositoryInterface
+	repository ports.ShortenerRepository
 	config     config.Config
 	mx         *sync.Mutex
 }
 
-func NewShortenerService(r ports.ShortenerRepositoryInterface, cfg config.Config) *ShortenerService {
+func NewShortenerService(r ports.ShortenerRepository, cfg config.Config) *ShortenerService {
 	return &ShortenerService{
 		repository: r,
 		config:     cfg,
@@ -26,7 +26,7 @@ func NewShortenerService(r ports.ShortenerRepositoryInterface, cfg config.Config
 	}
 }
 
-func (s *ShortenerService) GenerateURL(ctx context.Context, url string, randomStringLength int) (string, error) {
+func (s ShortenerService) GenerateURL(ctx context.Context, url string, randomStringLength int) (string, error) {
 	s.mx.Lock()
 	defer s.mx.Unlock()
 
