@@ -1,4 +1,4 @@
-package repository
+package postgres
 
 import (
 	"context"
@@ -14,11 +14,11 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-type PgRepository struct {
+type ShortenerRepository struct {
 	db *sql.DB
 }
 
-func NewPgRepository(ctg config.Config) (*PgRepository, error) {
+func NewShortenerRepository(ctg config.Config) (*ShortenerRepository, error) {
 	db := dbConnect(ctg.DataBaseDSN)
 	err := createTable(db)
 
@@ -26,7 +26,7 @@ func NewPgRepository(ctg config.Config) (*PgRepository, error) {
 		return nil, err
 	}
 
-	return &PgRepository{
+	return &ShortenerRepository{
 		db: db,
 	}, nil
 }
@@ -43,24 +43,15 @@ func createTable(db *sql.DB) error {
 	return err
 }
 
-func dbConnect(connStr string) *sql.DB {
-	db, err := sql.Open("pgx", connStr)
-	if err != nil {
-		panic(err)
-	}
-
-	return db
-}
-
-func (p PgRepository) Close() error {
+func (p ShortenerRepository) Close() error {
 	return p.db.Close()
 }
 
-func (p PgRepository) Ping() error {
+func (p ShortenerRepository) Ping() error {
 	return p.db.Ping()
 }
 
-func (p PgRepository) SetURL(ctx context.Context, id string, url string) error {
+func (p ShortenerRepository) SetURL(ctx context.Context, id string, url string) error {
 	_, err := p.db.ExecContext(ctx,
 		"INSERT INTO shortener (id, url) VALUES($1, $2)",
 		id, url)
@@ -75,7 +66,7 @@ func (p PgRepository) SetURL(ctx context.Context, id string, url string) error {
 	return err
 }
 
-func (p PgRepository) GetURLByID(ctx context.Context, id string) (string, bool) {
+func (p ShortenerRepository) GetURLByID(ctx context.Context, id string) (string, bool) {
 	var url string
 
 	row := p.db.QueryRowContext(ctx,
@@ -88,7 +79,7 @@ func (p PgRepository) GetURLByID(ctx context.Context, id string) (string, bool) 
 	return url, true
 }
 
-func (p PgRepository) GetURLByOriginalURL(ctx context.Context, originalURL string) (string, bool) {
+func (p ShortenerRepository) GetURLByOriginalURL(ctx context.Context, originalURL string) (string, bool) {
 	var (
 		id  string
 		url string
@@ -104,11 +95,11 @@ func (p PgRepository) GetURLByOriginalURL(ctx context.Context, originalURL strin
 	return id, true
 }
 
-func (p PgRepository) GetAllURL(ctx context.Context) map[string]string {
+func (p ShortenerRepository) GetAllURL(ctx context.Context) map[string]string {
 	return nil
 }
 
-func (p PgRepository) InsertURLs(ctx context.Context, urls []model.ShortenerURLMapping) error {
+func (p ShortenerRepository) InsertURLs(ctx context.Context, urls []model.ShortenerURLMapping) error {
 	tx, err := p.db.Begin()
 	if err != nil {
 		return err

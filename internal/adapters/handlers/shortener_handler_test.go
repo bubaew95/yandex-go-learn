@@ -11,8 +11,8 @@ import (
 	"testing"
 
 	"github.com/bubaew95/yandex-go-learn/config"
-	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository"
-	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/mock"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/fileStorage"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/postgres/mock"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/storage"
 	"github.com/bubaew95/yandex-go-learn/internal/core/model"
 	"github.com/bubaew95/yandex-go-learn/internal/core/service"
@@ -61,7 +61,7 @@ func TestHandlerCreate(t *testing.T) {
 	cfg := config.NewConfig()
 
 	shortenerDB, _ := storage.NewShortenerDB(*cfg)
-	shortenerRepository := repository.NewShortenerRepository(*shortenerDB)
+	shortenerRepository := fileStorage.NewShortenerRepository(*shortenerDB)
 	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
 	shortenerHandler := NewShortenerHandler(shortenerService)
 
@@ -147,7 +147,7 @@ func TestHandlerGet(t *testing.T) {
 		OriginalURL: "https://practicum.yandex.ru/learn",
 	})
 
-	shortenerRepository := repository.NewShortenerRepository(*shortenerDB)
+	shortenerRepository := fileStorage.NewShortenerRepository(*shortenerDB)
 	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
 	shortenerHandler := NewShortenerHandler(shortenerService)
 
@@ -202,7 +202,7 @@ func TestHandlerAddNewURLFromJson(t *testing.T) {
 	shortenerDB, _ := storage.NewShortenerDB(*cfg)
 	defer os.Remove(cfg.FilePath)
 
-	shortenerRepository := repository.NewShortenerRepository(*shortenerDB)
+	shortenerRepository := fileStorage.NewShortenerRepository(*shortenerDB)
 	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
 	shortenerHandler := NewShortenerHandler(shortenerService)
 

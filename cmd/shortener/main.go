@@ -9,7 +9,8 @@ import (
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/handlers"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/handlers/middleware"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/logger"
-	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/fileStorage"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/postgres"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/storage"
 	"github.com/bubaew95/yandex-go-learn/internal/core/ports"
 	"github.com/bubaew95/yandex-go-learn/internal/core/service"
@@ -55,7 +56,7 @@ func runApp() error {
 
 func initRepository(cfg config.Config) (ports.ShortenerRepositoryInterface, error) {
 	if cfg.DataBaseDSN != "" {
-		shortenerRepository, err := repository.NewPgRepository(cfg)
+		shortenerRepository, err := postgres.NewShortenerRepository(cfg)
 		if err != nil {
 			logger.Log.Fatal(fmt.Sprintf("Ошибка инициализации базы данных: %v", err))
 		}
@@ -67,7 +68,7 @@ func initRepository(cfg config.Config) (ports.ShortenerRepositoryInterface, erro
 	if err != nil {
 		return nil, fmt.Errorf("ошибка инициализации файла базы данных: %w", err)
 	}
-	return repository.NewShortenerRepository(*shortenerDB), nil
+	return fileStorage.NewShortenerRepository(*shortenerDB), nil
 }
 
 func setupRouter(shortenerHandler *handlers.ShortenerHandler) *chi.Mux {

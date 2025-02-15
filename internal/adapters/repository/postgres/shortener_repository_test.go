@@ -1,11 +1,11 @@
-package repository
+package postgres
 
 import (
 	"context"
 	"errors"
 	"testing"
 
-	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/mock"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/postgres/mock"
 	"github.com/bubaew95/yandex-go-learn/internal/core/model"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
