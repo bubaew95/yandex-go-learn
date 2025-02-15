@@ -7,7 +7,6 @@ import (
 
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/storage"
 	"github.com/bubaew95/yandex-go-learn/internal/core/model"
-	"github.com/bubaew95/yandex-go-learn/internal/core/ports"
 )
 
 type ShortenerRepository struct {
@@ -30,12 +29,6 @@ func (s ShortenerRepository) Close() error {
 }
 
 func (s ShortenerRepository) SetURL(ctx context.Context, id string, url string) error {
-	for _, v := range s.cache {
-		if strings.Contains(v, url) {
-			return ports.ErrUniqueIndex
-		}
-	}
-
 	s.cache[id] = url
 
 	data := &model.ShortenURL{
