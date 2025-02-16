@@ -39,17 +39,10 @@ func runApp() error {
 	}
 	defer safeClose(shortenerRepository)
 
-	route := chi.NewRouter()
-	route.Use(middleware.LoggerMiddleware)
-	route.Use(middleware.GZipMiddleware)
-
 	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
 	shortenerHandler := handlers.NewShortenerHandler(shortenerService)
-	setupShortenerRouter(route, shortenerHandler)
 
-	userRepository := postgres.NewUserRepository(*cfg)
-	userService := service.NewUserService(userRepository)
-	userHandler := handlers.NewUserHandler(userService)
+	route := setupRouter(shortenerHandler)
 
 	logger.Log.Info("Running server", zap.String("port", cfg.Port))
 	if err := http.ListenAndServe(cfg.Port, route); err != nil {
@@ -76,7 +69,12 @@ func initRepository(cfg config.Config) (ports.ShortenerRepository, error) {
 	return fileStorage.NewShortenerRepository(*shortenerDB), nil
 }
 
-func setupShortenerRouter(route *chi.Mux, shortenerHandler *handlers.ShortenerHandler) *chi.Mux {
+func setupRouter(shortenerHandler *handlers.ShortenerHandler) *chi.Mux {
+	route := chi.NewRouter()
+	route.Use(middleware.LoggerMiddleware)
+	route.Use(middleware.GZipMiddleware)
+	route.Use(middleware.CookieMiddleware)
+
 	route.Post("/", shortenerHandler.CreateURL)
 	route.Get("/{id}", shortenerHandler.GetURL)
 	route.Get("/ping", shortenerHandler.Ping)
@@ -85,6 +83,8 @@ func setupShortenerRouter(route *chi.Mux, shortenerHandler *handlers.ShortenerHa
 		r.Post("/", shortenerHandler.AddNewURL)
 		r.Post("/batch", shortenerHandler.Batch)
 	})
+
+	route.Get("/api/user/urls", shortenerHandler.GetUserURLS)
 
 	return route
 }
