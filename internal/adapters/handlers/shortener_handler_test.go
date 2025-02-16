@@ -63,7 +63,9 @@ func TestHandlerCreate(t *testing.T) {
 	cfg := config.NewConfig()
 
 	shortenerDB, _ := storage.NewShortenerDB(*cfg)
-	shortenerRepository := repository.NewShortenerRepository(*shortenerDB)
+	shortenerRepository, err := repository.NewShortenerRepository(*shortenerDB)
+	require.NoError(t, err)
+
 	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
 	shortenerHandler := NewShortenerHandler(shortenerService)
 
@@ -151,7 +153,9 @@ func TestHandlerGet(t *testing.T) {
 		OriginalURL: "https://practicum.yandex.ru/learn",
 	})
 
-	shortenerRepository := repository.NewShortenerRepository(*shortenerDB)
+	shortenerRepository, err := repository.NewShortenerRepository(*shortenerDB)
+	require.NoError(t, err)
+
 	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
 	shortenerHandler := NewShortenerHandler(shortenerService)
 
@@ -208,7 +212,9 @@ func TestHandlerAddNewURLFromJson(t *testing.T) {
 	shortenerDB, _ := storage.NewShortenerDB(*cfg)
 	defer os.Remove(cfg.FilePath)
 
-	shortenerRepository := repository.NewShortenerRepository(*shortenerDB)
+	shortenerRepository, err := repository.NewShortenerRepository(*shortenerDB)
+	require.NoError(t, err)
+
 	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
 	shortenerHandler := NewShortenerHandler(shortenerService)
 
