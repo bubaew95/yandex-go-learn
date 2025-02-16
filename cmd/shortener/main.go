@@ -65,7 +65,13 @@ func initRepository(cfg config.Config) (ports.ShortenerRepository, error) {
 	if err != nil {
 		return nil, fmt.Errorf("database file initialization error: %w", err)
 	}
-	return repository.NewShortenerRepository(*shortenerDB), nil
+
+	shortenerRepository, err := repository.NewShortenerRepository(*shortenerDB)
+	if err != nil {
+		logger.Log.Fatal("File initialization error", zap.Error(err))
+	}
+
+	return shortenerRepository, nil
 }
 
 func setupRouter(shortenerHandler *handlers.ShortenerHandler) *chi.Mux {
