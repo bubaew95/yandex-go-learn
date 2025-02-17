@@ -10,9 +10,12 @@ import (
 	"time"
 )
 
+type contextKey string
+
+const userIDKey contextKey = "user_id"
+
 var (
-	secretKey         = []byte("test")
-	contextKey string = "user_id"
+	secretKey = []byte("test")
 )
 
 func CookieMiddleware(h http.Handler) http.Handler {
@@ -35,7 +38,7 @@ func CookieMiddleware(h http.Handler) http.Handler {
 			}
 		}
 
-		ctx := context.WithValue(r.Context(), contextKey, cookieValue)
+		ctx := context.WithValue(r.Context(), userIDKey, cookieValue)
 		nRequest := r.WithContext(ctx)
 
 		cookie := &http.Cookie{
