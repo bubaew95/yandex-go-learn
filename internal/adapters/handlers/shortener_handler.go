@@ -143,6 +143,15 @@ func (s ShortenerHandler) Batch(w http.ResponseWriter, r *http.Request) {
 	writeJSONResponse(w, http.StatusCreated, items, logger.Log)
 }
 
+func (s ShortenerHandler) GetUserURLS(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("user_id")
+	if err != nil {
+		logger.Log.Debug("user_id cookie not found")
+	}
+
+	fmt.Println(cookie)
+}
+
 func writeJSONResponse(res http.ResponseWriter, statusCode int, data interface{}, logger *zap.Logger) {
 	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(statusCode)
