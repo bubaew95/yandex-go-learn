@@ -54,8 +54,10 @@ func CookieMiddleware(h http.Handler) http.Handler {
 		nRequest := r.WithContext(ctx)
 
 		cookie := &http.Cookie{
-			Name:  "user_id",
-			Value: cookieValue,
+			Name:     "user_id",
+			Value:    cookieValue,
+			Path:     "/",
+			HttpOnly: true,
 		}
 
 		http.SetCookie(w, cookie)

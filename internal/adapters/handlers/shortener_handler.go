@@ -153,7 +153,13 @@ func (s ShortenerHandler) GetUserURLS(w http.ResponseWriter, r *http.Request) {
 
 	items, err := s.service.GetURLSByUserID(r.Context(), cookie.Value)
 	if err != nil {
-		logger.Log.Debug("URL-s not found")
+		logger.Log.Debug("Get urls error", zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if items == nil {
+		logger.Log.Debug("User urls not found")
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}

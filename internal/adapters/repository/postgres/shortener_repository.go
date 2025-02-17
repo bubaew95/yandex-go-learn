@@ -157,7 +157,5 @@ func (p ShortenerRepository) GetURLSByUserID(ctx context.Context, userID string)
 		return nil, err
 	}
 
-	logger.Log.Debug("user data", zap.Any("items", items))
-
 	return items, nil
 }
