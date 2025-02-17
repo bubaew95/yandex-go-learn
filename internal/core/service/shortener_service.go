@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/bubaew95/yandex-go-learn/config"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/logger"
 	"github.com/bubaew95/yandex-go-learn/internal/core/model"
 	"github.com/bubaew95/yandex-go-learn/internal/core/ports"
 )
@@ -129,6 +130,6 @@ func (s ShortenerService) GetURLSByUserID(ctx context.Context, userID string) ([
 			ShortURL:    k,
 		})
 	}
-	fmt.Println(responseURLs)
+	logger.Log.Debug(fmt.Sprintf("test data %v", responseURLs))
 	return responseURLs, err
 }

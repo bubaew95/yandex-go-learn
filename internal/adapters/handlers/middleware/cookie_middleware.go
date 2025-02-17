@@ -8,6 +8,9 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/logger"
+	"go.uber.org/zap"
 )
 
 type contextKey string
@@ -38,14 +41,13 @@ func CookieMiddleware(h http.Handler) http.Handler {
 			}
 		}
 
+		logger.Log.Debug("user ud", zap.String("user_id", cookieValue))
 		ctx := context.WithValue(r.Context(), userIDKey, cookieValue)
 		nRequest := r.WithContext(ctx)
 
 		cookie := &http.Cookie{
-			Name:     "user_id",
-			Value:    cookieValue,
-			Path:     "/",
-			HttpOnly: true,
+			Name:  "user_id",
+			Value: cookieValue,
 		}
 
 		http.SetCookie(w, cookie)
