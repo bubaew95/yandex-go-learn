@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/bubaew95/yandex-go-learn/config"
-	fileStorage "github.com/bubaew95/yandex-go-learn/internal/adapters/repository/file_storage"
+	fileStorage "github.com/bubaew95/yandex-go-learn/internal/adapters/repository/filestorage"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/postgres/mock"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/storage"
 	"github.com/bubaew95/yandex-go-learn/internal/core/model"
