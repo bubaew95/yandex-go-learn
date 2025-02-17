@@ -127,7 +127,7 @@ func (s ShortenerService) GetURLSByUserID(ctx context.Context, userID string) ([
 	for k, v := range items {
 		responseURLs = append(responseURLs, model.ShortenerURLSForUserResponse{
 			OriginalURL: v,
-			ShortURL:    k,
+			ShortURL:    s.generateResponseURL(k),
 		})
 	}
 	logger.Log.Debug(fmt.Sprintf("test data %v", responseURLs))

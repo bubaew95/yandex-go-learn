@@ -2,9 +2,10 @@ package middleware
 
 import (
 	"context"
-	"crypto/hmac"
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/sha256"
-	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 	"time"
@@ -18,26 +19,31 @@ type ctxKey string
 const KeyUserID ctxKey = "user_id"
 
 var (
-	secretKey = []byte("testss")
+	secretKey = "x35k9f"
 )
-
-type favContextKey string
 
 func CookieMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var (
 			cookieValue string
+			userID      string
 		)
 
 		cookieUserID, err := r.Cookie("user_id")
 		if err != nil || cookieUserID.Value == "" {
-			userID := generateUserID()
-			cookieValue = signUserID(userID)
+			userID = generateUserID()
+			cookieValue, err = encodeUserID(userID)
+			if err != nil {
+				logger.Log.Debug("Error encode user id", zap.String("user_id", userID))
+			}
 		} else {
 			isValid := validateUserID(cookieUserID)
 			if !isValid {
-				userID := generateUserID()
-				cookieValue = signUserID(userID)
+				userID = generateUserID()
+				cookieValue, err = encodeUserID(userID)
+				if err != nil {
+					logger.Log.Debug("Error encode user id", zap.String("user_id", userID))
+				}
 			} else {
 				cookieValue = cookieUserID.Value
 			}
@@ -52,22 +58,59 @@ func CookieMiddleware(h http.Handler) http.Handler {
 			Value: cookieValue,
 		}
 
-		// http.SetCookie(w, cookie)
-		nRequest.AddCookie(cookie)
+		http.SetCookie(w, cookie)
 		h.ServeHTTP(w, nRequest)
 	})
 }
 
-func signUserID(userID string) string {
-	h := hmac.New(sha256.New, secretKey)
-	h.Write([]byte(userID))
+func decodeUserID(userID string) (string, error) {
+	aesgcm, nonce, err := aesGcm()
+	if err != nil {
+		return "", err
+	}
 
-	return base64.URLEncoding.EncodeToString(h.Sum(nil))
+	encrypted, err := hex.DecodeString(userID)
+	if err != nil {
+		return "", err
+	}
+
+	decrypted, err := aesgcm.Open(nil, nonce, encrypted, nil)
+	if err != nil {
+		return "", err
+	}
+
+	return string(decrypted), nil
+}
+
+func encodeUserID(userID string) (string, error) {
+	aesgcm, nonce, err := aesGcm()
+	if err != nil {
+		return "", err
+	}
+
+	dst := aesgcm.Seal(nil, nonce, []byte(userID), nil)
+	return fmt.Sprintf("%x", dst), nil
+}
+
+func aesGcm() (cipher.AEAD, []byte, error) {
+	key := sha256.Sum256([]byte(secretKey))
+	aesblock, err := aes.NewCipher(key[:])
+	if err != nil {
+		return nil, nil, err
+	}
+
+	aesgcm, err := cipher.NewGCM(aesblock)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	nonce := key[len(key)-aesgcm.NonceSize():]
+	return aesgcm, nonce, nil
 }
 
 func validateUserID(cookie *http.Cookie) bool {
 	userID := cookie.Value
-	signUserID := signUserID(userID)
+	signUserID, _ := decodeUserID(userID)
 
 	return userID != signUserID
 }
