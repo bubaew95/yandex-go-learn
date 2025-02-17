@@ -8,7 +8,7 @@ import (
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/handlers"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/handlers/middleware"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/logger"
-	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/fileStorage"
+	fileStorage "github.com/bubaew95/yandex-go-learn/internal/adapters/repository/file_storage"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/postgres"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/storage"
 	"github.com/bubaew95/yandex-go-learn/internal/core/ports"
