@@ -38,7 +38,7 @@ func (s ShortenerHandler) CreateURL(res http.ResponseWriter, req *http.Request) 
 
 	body := string(responseData)
 	if body == "" {
-		logger.Log.Debug("body is empty")
+		logger.Log.Debug("Body is empty")
 		res.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -64,12 +64,12 @@ func (s ShortenerHandler) CreateURL(res http.ResponseWriter, req *http.Request) 
 	writeByteResponse(res, http.StatusCreated, []byte(url))
 }
 
-func (s *ShortenerHandler) GetURL(res http.ResponseWriter, req *http.Request) {
+func (s ShortenerHandler) GetURL(res http.ResponseWriter, req *http.Request) {
 	id := chi.URLParam(req, "id")
 
 	url, ok := s.service.GetURLByID(req.Context(), id)
 	if !ok {
-		logger.Log.Debug("url not found by id", zap.String("id", id))
+		logger.Log.Debug("Url not found by id", zap.String("id", id))
 		res.WriteHeader(http.StatusNotFound)
 		return
 	}
@@ -78,11 +78,11 @@ func (s *ShortenerHandler) GetURL(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusTemporaryRedirect)
 }
 
-func (s *ShortenerHandler) AddNewURL(res http.ResponseWriter, req *http.Request) {
+func (s ShortenerHandler) AddNewURL(res http.ResponseWriter, req *http.Request) {
 	var requestBody model.ShortenerRequest
 
 	if err := json.NewDecoder(req.Body).Decode(&requestBody); err != nil {
-		logger.Log.Debug("cannot decode request JSON body", zap.Error(err))
+		logger.Log.Debug("Cannot decode request JSON body", zap.Error(err))
 		res.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -128,14 +128,14 @@ func (s ShortenerHandler) Batch(w http.ResponseWriter, r *http.Request) {
 
 	dec := json.NewDecoder(r.Body)
 	if err := dec.Decode(&batchURLMapping); err != nil {
-		logger.Log.Debug("cannot decode request JSON", zap.Error(err))
+		logger.Log.Debug("Cannot decode request JSON", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	items, err := s.service.InsertURLs(r.Context(), batchURLMapping)
 	if err != nil {
-		logger.Log.Debug("error insert urls by batch", zap.Error(err))
+		logger.Log.Debug("Error insert urls by batch", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

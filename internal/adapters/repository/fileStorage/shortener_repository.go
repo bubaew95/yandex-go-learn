@@ -15,13 +15,17 @@ type ShortenerRepository struct {
 	cache       map[string]string
 }
 
-func NewShortenerRepository(s storage.ShortenerDB) *ShortenerRepository {
-	data, _ := s.Load()
+func NewShortenerRepository(s storage.ShortenerDB) (*ShortenerRepository, error) {
+	data, err := s.Load()
+	if err != nil {
+		return nil, err
+	}
+
 	return &ShortenerRepository{
 		shortenerDB: s,
 		mx:          &sync.RWMutex{},
 		cache:       data,
-	}
+	}, nil
 }
 
 func (s ShortenerRepository) Close() error {
@@ -29,6 +33,9 @@ func (s ShortenerRepository) Close() error {
 }
 
 func (s ShortenerRepository) SetURL(ctx context.Context, id string, url string) error {
+	s.mx.Lock()
+	defer s.mx.Unlock()
+
 	s.cache[id] = url
 
 	data := &model.ShortenURL{
