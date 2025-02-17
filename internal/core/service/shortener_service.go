@@ -116,8 +116,8 @@ func isEmpty(t string) bool {
 	return strings.TrimSpace(t) == ""
 }
 
-func (s ShortenerService) GetURLSByUserID(ctx context.Context, user_id string) ([]model.ShortenerURLSForUserResponse, error) {
-	items, err := s.repository.GetURLSByUserID(ctx, user_id)
+func (s ShortenerService) GetURLSByUserID(ctx context.Context, userID string) ([]model.ShortenerURLSForUserResponse, error) {
+	items, err := s.repository.GetURLSByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}

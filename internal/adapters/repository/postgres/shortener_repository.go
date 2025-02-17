@@ -128,8 +128,8 @@ func (p ShortenerRepository) InsertURLs(ctx context.Context, urls []model.Shorte
 
 	return tx.Commit()
 }
-func (p ShortenerRepository) GetURLSByUserID(ctx context.Context, user_id string) (map[string]string, error) {
-	rows, err := p.db.QueryContext(ctx, "SELECT id, url FROM shortener WHERE user_id = $1", user_id)
+func (p ShortenerRepository) GetURLSByUserID(ctx context.Context, userID string) (map[string]string, error) {
+	rows, err := p.db.QueryContext(ctx, "SELECT id, url FROM shortener WHERE user_id = $1", userID)
 	if err != nil {
 		return nil, err
 	}
@@ -138,15 +138,15 @@ func (p ShortenerRepository) GetURLSByUserID(ctx context.Context, user_id string
 	items := make(map[string]string)
 	for rows.Next() {
 		var (
-			Id  string
+			ID  string
 			URL string
 		)
-		err := rows.Scan(&Id, &URL)
+		err := rows.Scan(&ID, &URL)
 		if err != nil {
 			return nil, err
 		}
 
-		items[Id] = URL
+		items[ID] = URL
 	}
 
 	return items, nil
