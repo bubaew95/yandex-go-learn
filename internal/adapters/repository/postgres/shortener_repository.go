@@ -7,11 +7,14 @@ import (
 	"fmt"
 
 	"github.com/bubaew95/yandex-go-learn/config"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/handlers/middleware"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/logger"
 	"github.com/bubaew95/yandex-go-learn/internal/core/model"
 	"github.com/bubaew95/yandex-go-learn/internal/core/ports"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"go.uber.org/zap"
 )
 
 type ShortenerRepository struct {
@@ -54,8 +57,9 @@ func (p ShortenerRepository) Ping() error {
 }
 
 func (p ShortenerRepository) SetURL(ctx context.Context, id string, url string) error {
-	userID := ctx.Value("user_id")
+	userID := ctx.Value(middleware.KeyUserID)
 
+	logger.Log.Debug("SetURL", zap.Any("user_id", userID))
 	_, err := p.db.ExecContext(ctx,
 		"INSERT INTO shortener (id, url, user_id) VALUES($1, $2, $3)",
 		id, url, userID)
@@ -110,7 +114,7 @@ func (p ShortenerRepository) InsertURLs(ctx context.Context, urls []model.Shorte
 	}
 	defer tx.Rollback()
 
-	userID := ctx.Value("user_id")
+	userID := ctx.Value(middleware.KeyUserID)
 
 	smtp, err := tx.PrepareContext(ctx, "INSERT INTO shortener (id, url, user_id) VALUES($1, $2, $3) ON CONFLICT DO NOTHING")
 	if err != nil {

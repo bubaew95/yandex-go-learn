@@ -13,13 +13,15 @@ import (
 	"go.uber.org/zap"
 )
 
-type contextKey string
+type ctxKey string
 
-const userIDKey contextKey = "user_id"
+const KeyUserID ctxKey = "user_id"
 
 var (
-	secretKey = []byte("test")
+	secretKey = []byte("testss")
 )
+
+type favContextKey string
 
 func CookieMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -42,7 +44,7 @@ func CookieMiddleware(h http.Handler) http.Handler {
 		}
 
 		logger.Log.Debug("user ud", zap.String("user_id", cookieValue))
-		ctx := context.WithValue(r.Context(), userIDKey, cookieValue)
+		ctx := context.WithValue(r.Context(), KeyUserID, cookieValue)
 		nRequest := r.WithContext(ctx)
 
 		cookie := &http.Cookie{
@@ -50,7 +52,8 @@ func CookieMiddleware(h http.Handler) http.Handler {
 			Value: cookieValue,
 		}
 
-		http.SetCookie(w, cookie)
+		// http.SetCookie(w, cookie)
+		nRequest.AddCookie(cookie)
 		h.ServeHTTP(w, nRequest)
 	})
 }
