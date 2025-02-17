@@ -286,7 +286,7 @@ func TestHandlerBatch(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	shortenerRepository := mock.NewMockShortenerRepositoryInterface(ctrl)
+	shortenerRepository := mock.NewMockShortenerRepository(ctrl)
 	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
 	shortenerHandler := NewShortenerHandler(shortenerService)
 

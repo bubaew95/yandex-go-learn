@@ -13,6 +13,7 @@ type ShortenerRepository interface {
 	SetURL(ctx context.Context, id string, url string) error
 	GetAllURL(ctx context.Context) map[string]string
 	InsertURLs(ctx context.Context, urls []model.ShortenerURLMapping) error
+	GetURLSByUserID(ctx context.Context, user_id string) (map[string]string, error)
 
 	Ping() error
 	Close() error

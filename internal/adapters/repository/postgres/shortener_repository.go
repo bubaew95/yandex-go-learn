@@ -35,9 +35,11 @@ func createTable(db *sql.DB) error {
 	_, err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS shortener (
 			id VARCHAR(100) PRIMARY KEY,
-			url VARCHAR(1024)
+			url VARCHAR(1024),
+			user_id VARCHAR(255)
 		);
 		CREATE UNIQUE INDEX IF NOT EXISTS idx_original_url ON shortener (url);
+		CREATE INDEX IF NOT EXISTS idx_user_id ON shortener (user_id);
 	`)
 
 	return err
@@ -52,9 +54,11 @@ func (p ShortenerRepository) Ping() error {
 }
 
 func (p ShortenerRepository) SetURL(ctx context.Context, id string, url string) error {
+	userID := ctx.Value("user_id")
+
 	_, err := p.db.ExecContext(ctx,
-		"INSERT INTO shortener (id, url) VALUES($1, $2)",
-		id, url)
+		"INSERT INTO shortener (id, url, user_id) VALUES($1, $2, $3)",
+		id, url, userID)
 
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -104,10 +108,11 @@ func (p ShortenerRepository) InsertURLs(ctx context.Context, urls []model.Shorte
 	if err != nil {
 		return err
 	}
-	fmt.Println(urls)
 	defer tx.Rollback()
 
-	smtp, err := tx.PrepareContext(ctx, "INSERT INTO shortener (id, url) VALUES($1, $2) ON CONFLICT DO NOTHING")
+	userID := ctx.Value("user_id")
+
+	smtp, err := tx.PrepareContext(ctx, "INSERT INTO shortener (id, url, user_id) VALUES($1, $2, $3) ON CONFLICT DO NOTHING")
 	if err != nil {
 		fmt.Println("test")
 		return err
@@ -115,11 +120,34 @@ func (p ShortenerRepository) InsertURLs(ctx context.Context, urls []model.Shorte
 	defer smtp.Close()
 
 	for _, v := range urls {
-		_, err := smtp.ExecContext(ctx, v.CorrelationID, v.OriginalURL)
+		_, err := smtp.ExecContext(ctx, v.CorrelationID, v.OriginalURL, userID)
 		if err != nil {
 			return err
 		}
 	}
 
 	return tx.Commit()
+}
+func (p ShortenerRepository) GetURLSByUserID(ctx context.Context, user_id string) (map[string]string, error) {
+	rows, err := p.db.QueryContext(ctx, "SELECT id, url FROM shortener WHERE user_id = $1", user_id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	items := make(map[string]string)
+	for rows.Next() {
+		var (
+			Id  string
+			URL string
+		)
+		err := rows.Scan(&Id, &URL)
+		if err != nil {
+			return nil, err
+		}
+
+		items[Id] = URL
+	}
+
+	return items, nil
 }

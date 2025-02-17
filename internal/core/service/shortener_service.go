@@ -115,3 +115,20 @@ func (s ShortenerService) InsertURLs(ctx context.Context, urls []model.Shortener
 func isEmpty(t string) bool {
 	return strings.TrimSpace(t) == ""
 }
+
+func (s ShortenerService) GetURLSByUserID(ctx context.Context, user_id string) ([]model.ShortenerURLSForUserResponse, error) {
+	items, err := s.repository.GetURLSByUserID(ctx, user_id)
+	if err != nil {
+		return nil, err
+	}
+
+	var responseURLs []model.ShortenerURLSForUserResponse
+	for k, v := range items {
+		responseURLs = append(responseURLs, model.ShortenerURLSForUserResponse{
+			OriginalURL: v,
+			ShortURL:    s.generateResponseURL(k),
+		})
+	}
+	fmt.Println(responseURLs)
+	return responseURLs, err
+}

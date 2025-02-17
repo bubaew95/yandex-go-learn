@@ -88,3 +88,7 @@ func (s ShortenerRepository) InsertURLs(ctx context.Context, urls []model.Shorte
 
 	return nil
 }
+
+func (s ShortenerRepository) GetURLSByUserID(ctx context.Context, user_id string) (map[string]string, error) {
+	return nil, nil
+}
