@@ -363,8 +363,8 @@ func TestUserURLS(t *testing.T) {
 	}
 
 	cfg := &config.Config{
-		BaseURL:     "https://site.local",
-		DataBaseDSN: "host=127.0.0.1 user=admin password=admin dbname=yandex sslmode=disable",
+		BaseURL: "https://site.local",
+		// DataBaseDSN: "host=127.0.0.1 user=admin password=admin dbname=yandex sslmode=disable",
 	}
 
 	ctrl := gomock.NewController(t)
