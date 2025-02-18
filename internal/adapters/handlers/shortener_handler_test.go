@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,7 +12,6 @@ import (
 	"testing"
 
 	"github.com/bubaew95/yandex-go-learn/config"
-	"github.com/bubaew95/yandex-go-learn/internal/adapters/handlers/middleware"
 	fileStorage "github.com/bubaew95/yandex-go-learn/internal/adapters/repository/filestorage"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/postgres"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/postgres/mock"
@@ -391,9 +389,6 @@ func TestUserURLS(t *testing.T) {
 			req, err := http.NewRequest(tt.method, ts.URL+tt.path, strings.NewReader(tt.data))
 			require.NoError(t, err)
 			defer req.Body.Close()
-
-			ctx := context.WithValue(req.Context(), middleware.KeyUserID, "cookieValue")
-			req.WithContext(ctx)
 
 			respBody, err := io.ReadAll(req.Body)
 			require.NoError(t, err)
