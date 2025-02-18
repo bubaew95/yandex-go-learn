@@ -145,6 +145,7 @@ func (s ShortenerHandler) Batch(w http.ResponseWriter, r *http.Request) {
 
 func (s ShortenerHandler) GetUserURLS(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("user_id")
+	logger.Log.Debug("Cookie", zap.String("cookie", cookie.Value))
 	if err != nil {
 		logger.Log.Debug("Cookie not found")
 		w.WriteHeader(http.StatusUnauthorized)
