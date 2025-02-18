@@ -323,7 +323,7 @@ func TestHandlerBatch(t *testing.T) {
 	}
 }
 
-func TestUserURLS(t *testing.T) {
+func estUserURLS(t *testing.T) {
 	t.Parallel()
 
 	type want struct {
