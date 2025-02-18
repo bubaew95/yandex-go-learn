@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/bubaew95/yandex-go-learn/config"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/handlers/middleware"
 	fileStorage "github.com/bubaew95/yandex-go-learn/internal/adapters/repository/filestorage"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/postgres"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/postgres/mock"
@@ -323,7 +324,7 @@ func TestHandlerBatch(t *testing.T) {
 	}
 }
 
-func estUserURLS(t *testing.T) {
+func TestUserURLS(t *testing.T) {
 	t.Parallel()
 
 	type want struct {
@@ -332,12 +333,12 @@ func estUserURLS(t *testing.T) {
 	}
 
 	tests := []struct {
-		name     string
-		path     string
-		data     string
-		method   string
-		isCookie bool
-		want     want
+		name   string
+		path   string
+		data   string
+		method string
+		userID string
+		want   want
 	}{
 		{
 			name:   "Add url for user",
@@ -346,25 +347,23 @@ func estUserURLS(t *testing.T) {
 			data:   `http://google.com`,
 			want: want{
 				status: http.StatusCreated,
-				result: ``,
 			},
-			isCookie: false,
+			userID: "user_id",
 		},
 		{
-			name:   "Dublicate CorrelationId",
+			name:   "Get User urls",
 			path:   `/api/user/urls`,
 			method: http.MethodGet,
 			want: want{
 				status: http.StatusCreated,
 				result: ``,
 			},
-			isCookie: true,
 		},
 	}
 
 	cfg := &config.Config{
-		BaseURL: "https://site.local",
-		// DataBaseDSN: "host=127.0.0.1 user=admin password=admin dbname=yandex sslmode=disable",
+		BaseURL:     "https://site.local",
+		DataBaseDSN: "host=127.0.0.1 user=admin password=admin dbname=yandex sslmode=disable",
 	}
 
 	ctrl := gomock.NewController(t)
@@ -378,6 +377,7 @@ func estUserURLS(t *testing.T) {
 	shortenerHandler := NewShortenerHandler(shortenerService)
 
 	router := chi.NewRouter()
+	router.Use(middleware.CookieMiddleware)
 	router.Post("/", shortenerHandler.CreateURL)
 	router.Get("/api/user/urls", shortenerHandler.GetUserURLS)
 
@@ -390,7 +390,13 @@ func estUserURLS(t *testing.T) {
 			require.NoError(t, err)
 			defer req.Body.Close()
 
-			respBody, err := io.ReadAll(req.Body)
+			resp, err := ts.Client().Do(req)
+			require.NoError(t, err)
+			defer resp.Body.Close()
+
+			fmt.Println("user_id", req.Context().Value(middleware.KeyUserID))
+
+			respBody, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 
 			fmt.Println(tt.path, string(respBody))

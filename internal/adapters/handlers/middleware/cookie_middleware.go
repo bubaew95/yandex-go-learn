@@ -30,26 +30,16 @@ func CookieMiddleware(h http.Handler) http.Handler {
 		)
 
 		cookieUserID, err := r.Cookie("user_id")
-		if err != nil || cookieUserID.Value == "" {
+		if err != nil || cookieUserID.Value == "" || !validateUserID(cookieUserID) {
 			userID = generateUserID()
 			cookieValue, err = encodeUserID(userID)
 			if err != nil {
 				logger.Log.Debug("Error encode user id", zap.String("user_id", userID))
 			}
 		} else {
-			isValid := validateUserID(cookieUserID)
-			if !isValid {
-				userID = generateUserID()
-				cookieValue, err = encodeUserID(userID)
-				if err != nil {
-					logger.Log.Debug("Error encode user id", zap.String("user_id", userID))
-				}
-			} else {
-				cookieValue = cookieUserID.Value
-			}
+			cookieValue = cookieUserID.Value
 		}
 
-		logger.Log.Debug("user ud", zap.String("user_id", cookieValue))
 		ctx := context.WithValue(r.Context(), KeyUserID, cookieValue)
 		nRequest := r.WithContext(ctx)
 
