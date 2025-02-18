@@ -96,7 +96,7 @@ func (s ShortenerHandler) AddNewURL(res http.ResponseWriter, req *http.Request) 
 					Result: originURL,
 				}
 
-				writeJSONResponse(res, http.StatusConflict, responseModel, logger.Log)
+				writeJSONResponse(res, http.StatusConflict, responseModel)
 				return
 			}
 		}
@@ -110,7 +110,7 @@ func (s ShortenerHandler) AddNewURL(res http.ResponseWriter, req *http.Request) 
 		Result: url,
 	}
 
-	writeJSONResponse(res, http.StatusCreated, responseModel, logger.Log)
+	writeJSONResponse(res, http.StatusCreated, responseModel)
 }
 
 func (s ShortenerHandler) Ping(w http.ResponseWriter, r *http.Request) {
@@ -140,15 +140,39 @@ func (s ShortenerHandler) Batch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSONResponse(w, http.StatusCreated, items, logger.Log)
+	writeJSONResponse(w, http.StatusCreated, items)
 }
 
-func writeJSONResponse(res http.ResponseWriter, statusCode int, data interface{}, logger *zap.Logger) {
+func (s ShortenerHandler) GetUserURLS(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("user_id")
+	if err != nil {
+		logger.Log.Debug("Cookie not found")
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	items, err := s.service.GetURLSByUserID(r.Context(), cookie.Value)
+	if err != nil {
+		logger.Log.Debug("Get urls error", zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if items == nil {
+		logger.Log.Debug("User urls not found")
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	writeJSONResponse(w, http.StatusOK, items)
+}
+
+func writeJSONResponse(res http.ResponseWriter, statusCode int, data interface{}) {
 	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(statusCode)
 
 	if err := json.NewEncoder(res).Encode(data); err != nil {
-		logger.Debug("Cannot encode JSON", zap.Error(err))
+		logger.Log.Debug("Cannot encode JSON", zap.Error(err))
 	}
 }
 

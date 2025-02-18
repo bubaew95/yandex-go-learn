@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/bubaew95/yandex-go-learn/config"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/logger"
 	"github.com/bubaew95/yandex-go-learn/internal/core/model"
 	"github.com/bubaew95/yandex-go-learn/internal/core/ports"
 )
@@ -114,4 +115,21 @@ func (s ShortenerService) InsertURLs(ctx context.Context, urls []model.Shortener
 
 func isEmpty(t string) bool {
 	return strings.TrimSpace(t) == ""
+}
+
+func (s ShortenerService) GetURLSByUserID(ctx context.Context, userID string) ([]model.ShortenerURLSForUserResponse, error) {
+	items, err := s.repository.GetURLSByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	var responseURLs []model.ShortenerURLSForUserResponse
+	for k, v := range items {
+		responseURLs = append(responseURLs, model.ShortenerURLSForUserResponse{
+			OriginalURL: v,
+			ShortURL:    s.generateResponseURL(k),
+		})
+	}
+	logger.Log.Debug(fmt.Sprintf("test data %v", responseURLs))
+	return responseURLs, err
 }

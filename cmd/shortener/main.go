@@ -8,7 +8,8 @@ import (
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/handlers"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/handlers/middleware"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/logger"
-	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository"
+	fileStorage "github.com/bubaew95/yandex-go-learn/internal/adapters/repository/filestorage"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/postgres"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/storage"
 	"github.com/bubaew95/yandex-go-learn/internal/core/ports"
 	"github.com/bubaew95/yandex-go-learn/internal/core/service"
@@ -53,7 +54,7 @@ func runApp() error {
 
 func initRepository(cfg config.Config) (ports.ShortenerRepository, error) {
 	if cfg.DataBaseDSN != "" {
-		shortenerRepository, err := repository.NewPgRepository(cfg)
+		shortenerRepository, err := postgres.NewShortenerRepository(cfg)
 		if err != nil {
 			logger.Log.Fatal("Database initialization error", zap.Error(err))
 		}
@@ -66,18 +67,16 @@ func initRepository(cfg config.Config) (ports.ShortenerRepository, error) {
 		return nil, fmt.Errorf("database file initialization error: %w", err)
 	}
 
-	shortenerRepository, err := repository.NewShortenerRepository(*shortenerDB)
-	if err != nil {
-		logger.Log.Fatal("File initialization error", zap.Error(err))
-	}
+	shortener, err := fileStorage.NewShortenerRepository(*shortenerDB)
 
-	return shortenerRepository, nil
+	return shortener, err
 }
 
 func setupRouter(shortenerHandler *handlers.ShortenerHandler) *chi.Mux {
 	route := chi.NewRouter()
 	route.Use(middleware.LoggerMiddleware)
 	route.Use(middleware.GZipMiddleware)
+	route.Use(middleware.CookieMiddleware)
 
 	route.Post("/", shortenerHandler.CreateURL)
 	route.Get("/{id}", shortenerHandler.GetURL)
@@ -87,6 +86,8 @@ func setupRouter(shortenerHandler *handlers.ShortenerHandler) *chi.Mux {
 		r.Post("/", shortenerHandler.AddNewURL)
 		r.Post("/batch", shortenerHandler.Batch)
 	})
+
+	route.Get("/api/user/urls", shortenerHandler.GetUserURLS)
 
 	return route
 }

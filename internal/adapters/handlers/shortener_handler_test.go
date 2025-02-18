@@ -11,8 +11,8 @@ import (
 	"testing"
 
 	"github.com/bubaew95/yandex-go-learn/config"
-	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository"
-	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/mock"
+	fileStorage "github.com/bubaew95/yandex-go-learn/internal/adapters/repository/filestorage"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/postgres/mock"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/storage"
 	"github.com/bubaew95/yandex-go-learn/internal/core/model"
 	"github.com/bubaew95/yandex-go-learn/internal/core/service"
@@ -63,7 +63,7 @@ func TestHandlerCreate(t *testing.T) {
 	cfg := config.NewConfig()
 
 	shortenerDB, _ := storage.NewShortenerDB(*cfg)
-	shortenerRepository, err := repository.NewShortenerRepository(*shortenerDB)
+	shortenerRepository, err := fileStorage.NewShortenerRepository(*shortenerDB)
 	require.NoError(t, err)
 
 	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
@@ -153,7 +153,7 @@ func TestHandlerGet(t *testing.T) {
 		OriginalURL: "https://practicum.yandex.ru/learn",
 	})
 
-	shortenerRepository, err := repository.NewShortenerRepository(*shortenerDB)
+	shortenerRepository, err := fileStorage.NewShortenerRepository(*shortenerDB)
 	require.NoError(t, err)
 
 	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
@@ -212,7 +212,7 @@ func TestHandlerAddNewURLFromJson(t *testing.T) {
 	shortenerDB, _ := storage.NewShortenerDB(*cfg)
 	defer os.Remove(cfg.FilePath)
 
-	shortenerRepository, err := repository.NewShortenerRepository(*shortenerDB)
+	shortenerRepository, err := fileStorage.NewShortenerRepository(*shortenerDB)
 	require.NoError(t, err)
 
 	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
@@ -286,7 +286,7 @@ func TestHandlerBatch(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	shortenerRepository := mock.NewMockShortenerRepositoryInterface(ctrl)
+	shortenerRepository := mock.NewMockShortenerRepository(ctrl)
 	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
 	shortenerHandler := NewShortenerHandler(shortenerService)
 
@@ -320,3 +320,82 @@ func TestHandlerBatch(t *testing.T) {
 		})
 	}
 }
+
+// func TestUserURLS(t *testing.T) {
+// 	t.Parallel()
+
+// 	type want struct {
+// 		status int
+// 		result string
+// 	}
+
+// 	tests := []struct {
+// 		name   string
+// 		path   string
+// 		data   string
+// 		method string
+// 		userID string
+// 		want   want
+// 	}{
+// 		{
+// 			name:   "Add url for user",
+// 			path:   `/`,
+// 			method: http.MethodPost,
+// 			data:   `http://google.com`,
+// 			want: want{
+// 				status: http.StatusCreated,
+// 			},
+// 			userID: "user_id",
+// 		},
+// 		{
+// 			name:   "Get User urls",
+// 			path:   `/api/user/urls`,
+// 			method: http.MethodGet,
+// 			want: want{
+// 				status: http.StatusCreated,
+// 				result: ``,
+// 			},
+// 		},
+// 	}
+
+// 	cfg := &config.Config{
+// 		BaseURL:     "https://site.local",
+// 		DataBaseDSN: "host=127.0.0.1 user=admin password=admin dbname=yandex sslmode=disable",
+// 	}
+
+// 	ctrl := gomock.NewController(t)
+// 	defer ctrl.Finish()
+
+// 	// shortenerRepository := mock.NewMockShortenerRepository(ctrl)
+// 	shortenerRepository, err := postgres.NewShortenerRepository(*cfg)
+// 	require.NoError(t, err)
+
+// 	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
+// 	shortenerHandler := NewShortenerHandler(shortenerService)
+
+// 	router := chi.NewRouter()
+// 	router.Post("/", shortenerHandler.CreateURL)
+// 	router.Get("/api/user/urls", shortenerHandler.GetUserURLS)
+
+// 	ts := httptest.NewServer(router)
+// 	defer ts.Close()
+
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			req, err := http.NewRequest(tt.method, ts.URL+tt.path, strings.NewReader(tt.data))
+// 			require.NoError(t, err)
+// 			defer req.Body.Close()
+
+// 			resp, err := ts.Client().Do(req)
+// 			require.NoError(t, err)
+// 			defer resp.Body.Close()
+
+// 			fmt.Println("user_id", req.Context().Value(crypto.KeyUserID))
+
+// 			respBody, err := io.ReadAll(resp.Body)
+// 			require.NoError(t, err)
+
+// 			fmt.Println(tt.path, string(respBody))
+// 		})
+// 	}
+// }

@@ -1,4 +1,4 @@
-package repository
+package filestorage
 
 import (
 	"context"
@@ -87,4 +87,8 @@ func (s ShortenerRepository) InsertURLs(ctx context.Context, urls []model.Shorte
 	}
 
 	return nil
+}
+
+func (s ShortenerRepository) GetURLSByUserID(ctx context.Context, userID string) (map[string]string, error) {
+	return nil, nil
 }
