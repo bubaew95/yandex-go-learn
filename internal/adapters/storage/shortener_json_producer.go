@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/bubaew95/yandex-go-learn/internal/models"
+	"github.com/bubaew95/yandex-go-learn/internal/core/model"
 )
 
 type Producer struct {
@@ -24,7 +24,7 @@ func NewProducer(filename string) (*Producer, error) {
 	}, nil
 }
 
-func (p *Producer) WriteShortener(s *models.ShortenURL) error {
+func (p *Producer) WriteShortener(s *model.ShortenURL) error {
 	return p.encoder.Encode(s)
 }
 
