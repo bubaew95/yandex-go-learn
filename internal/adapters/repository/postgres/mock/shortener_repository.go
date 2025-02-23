@@ -49,6 +49,20 @@ func (mr *MockShortenerRepositoryMockRecorder) Close() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockShortenerRepository)(nil).Close))
 }
 
+// DeleteUserURLS mocks base method.
+func (m *MockShortenerRepository) DeleteUserURLS(ctx context.Context, urls []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteUserURLS", ctx, urls)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteUserURLS indicates an expected call of DeleteUserURLS.
+func (mr *MockShortenerRepositoryMockRecorder) DeleteUserURLS(ctx, urls interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUserURLS", reflect.TypeOf((*MockShortenerRepository)(nil).DeleteUserURLS), ctx, urls)
+}
+
 // GetAllURL mocks base method.
 func (m *MockShortenerRepository) GetAllURL(ctx context.Context) map[string]string {
 	m.ctrl.T.Helper()
@@ -94,18 +108,18 @@ func (mr *MockShortenerRepositoryMockRecorder) GetURLByOriginalURL(ctx, original
 }
 
 // GetURLSByUserID mocks base method.
-func (m *MockShortenerRepository) GetURLSByUserID(ctx context.Context, user_id string) (map[string]string, error) {
+func (m *MockShortenerRepository) GetURLSByUserID(ctx context.Context, userID string) (map[string]string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetURLSByUserID", ctx, user_id)
+	ret := m.ctrl.Call(m, "GetURLSByUserID", ctx, userID)
 	ret0, _ := ret[0].(map[string]string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetURLSByUserID indicates an expected call of GetURLSByUserID.
-func (mr *MockShortenerRepositoryMockRecorder) GetURLSByUserID(ctx, user_id interface{}) *gomock.Call {
+func (mr *MockShortenerRepositoryMockRecorder) GetURLSByUserID(ctx, userID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetURLSByUserID", reflect.TypeOf((*MockShortenerRepository)(nil).GetURLSByUserID), ctx, user_id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetURLSByUserID", reflect.TypeOf((*MockShortenerRepository)(nil).GetURLSByUserID), ctx, userID)
 }
 
 // InsertURLs mocks base method.

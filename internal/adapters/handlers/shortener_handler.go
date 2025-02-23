@@ -29,6 +29,23 @@ func NewShortenerHandler(s ports.ShortenerService) *ShortenerHandler {
 	}
 }
 
+func writeJSONResponse(res http.ResponseWriter, statusCode int, data interface{}) {
+	res.Header().Set("Content-Type", "application/json")
+	res.WriteHeader(statusCode)
+
+	if err := json.NewEncoder(res).Encode(data); err != nil {
+		logger.Log.Debug("Cannot encode JSON", zap.Error(err))
+	}
+}
+
+func writeByteResponse(res http.ResponseWriter, statusCode int, data []byte) {
+	res.WriteHeader(statusCode)
+	res.Header().Set("content-type", "text/plain")
+	res.Header().Set("content-length", strconv.Itoa(len(data)))
+
+	res.Write(data)
+}
+
 func (s ShortenerHandler) CreateURL(res http.ResponseWriter, req *http.Request) {
 	responseData, err := io.ReadAll(req.Body)
 	if err != nil {
@@ -70,7 +87,7 @@ func (s ShortenerHandler) GetURL(res http.ResponseWriter, req *http.Request) {
 	url, ok := s.service.GetURLByID(req.Context(), id)
 	if !ok {
 		logger.Log.Debug("Url not found by id", zap.String("id", id))
-		res.WriteHeader(http.StatusNotFound)
+		res.WriteHeader(http.StatusGone)
 		return
 	}
 
@@ -167,19 +184,28 @@ func (s ShortenerHandler) GetUserURLS(w http.ResponseWriter, r *http.Request) {
 	writeJSONResponse(w, http.StatusOK, items)
 }
 
-func writeJSONResponse(res http.ResponseWriter, statusCode int, data interface{}) {
-	res.Header().Set("Content-Type", "application/json")
-	res.WriteHeader(statusCode)
-
-	if err := json.NewEncoder(res).Encode(data); err != nil {
-		logger.Log.Debug("Cannot encode JSON", zap.Error(err))
+func (s ShortenerHandler) DeleteUserURLS(w http.ResponseWriter, r *http.Request) {
+	_, err := r.Cookie("user_id")
+	if err != nil {
+		logger.Log.Debug("Cookie not found")
+		w.WriteHeader(http.StatusNoContent)
+		return
 	}
-}
 
-func writeByteResponse(res http.ResponseWriter, statusCode int, data []byte) {
-	res.WriteHeader(statusCode)
-	res.Header().Set("content-type", "text/plain")
-	res.Header().Set("content-length", strconv.Itoa(len(data)))
+	var deleteItems []string
+	if err := json.NewDecoder(r.Body).Decode(&deleteItems); err != nil {
+		logger.Log.Debug("Cannot decode request JSON", zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
-	res.Write(data)
+	err = s.service.DeleteUserURLS(r.Context(), deleteItems)
+	if err != nil {
+		logger.Log.Debug("Error insert urls by batch", zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	logger.Log.Debug("Urls deleted")
+	w.WriteHeader(http.StatusAccepted)
 }

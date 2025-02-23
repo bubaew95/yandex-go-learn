@@ -92,3 +92,7 @@ func (s ShortenerRepository) InsertURLs(ctx context.Context, urls []model.Shorte
 func (s ShortenerRepository) GetURLSByUserID(ctx context.Context, userID string) (map[string]string, error) {
 	return nil, nil
 }
+
+func (s ShortenerRepository) DeleteUserURLS(ctx context.Context, urls []string) error {
+	return nil
+}

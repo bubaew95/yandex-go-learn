@@ -87,7 +87,10 @@ func setupRouter(shortenerHandler *handlers.ShortenerHandler) *chi.Mux {
 		r.Post("/batch", shortenerHandler.Batch)
 	})
 
-	route.Get("/api/user/urls", shortenerHandler.GetUserURLS)
+	route.Route("/api/user", func(r chi.Router) {
+		r.Get("/urls", shortenerHandler.GetUserURLS)
+		r.Delete("/urls", shortenerHandler.DeleteUserURLS)
+	})
 
 	return route
 }

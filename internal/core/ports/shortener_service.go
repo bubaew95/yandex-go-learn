@@ -13,6 +13,7 @@ type ShortenerService interface {
 	GetAllURL(ctx context.Context) map[string]string
 	InsertURLs(ctx context.Context, urls []model.ShortenerURLMapping) ([]model.ShortenerURLResponse, error)
 	GetURLSByUserID(ctx context.Context, userID string) ([]model.ShortenerURLSForUserResponse, error)
+	DeleteUserURLS(ctx context.Context, items []string) error
 
 	RandStringBytes(n int) string
 	Ping() error

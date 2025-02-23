@@ -39,7 +39,8 @@ func createTable(db *sql.DB) error {
 		CREATE TABLE IF NOT EXISTS shortener (
 			id VARCHAR(100) PRIMARY KEY,
 			url VARCHAR(1024),
-			user_id VARCHAR(255)
+			user_id VARCHAR(255),
+			is_deleted BOOLEAN DEFAULT FALSE
 		);
 		CREATE UNIQUE INDEX IF NOT EXISTS idx_original_url ON shortener (url);
 		CREATE INDEX IF NOT EXISTS idx_user_id ON shortener (user_id);
@@ -78,7 +79,7 @@ func (p ShortenerRepository) GetURLByID(ctx context.Context, id string) (string,
 	var url string
 
 	row := p.db.QueryRowContext(ctx,
-		"SELECT url FROM shortener WHERE id = $1", id)
+		"SELECT url FROM shortener WHERE id = $1 and is_deleted = false", id)
 	err := row.Scan(&url)
 	if err != nil {
 		return "", false
@@ -158,4 +159,29 @@ func (p ShortenerRepository) GetURLSByUserID(ctx context.Context, userID string)
 	}
 
 	return items, nil
+}
+
+func (p ShortenerRepository) DeleteUserURLS(ctx context.Context, items []string) error {
+	userID := ctx.Value(crypto.KeyUserID)
+	tx, err := p.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	smtp, err := tx.PrepareContext(ctx, "UPDATE shortener SET is_deleted = true WHERE user_id = $1 and id = $2")
+	if err != nil {
+		return err
+	}
+	defer smtp.Close()
+
+	for _, v := range items {
+		logger.Log.Debug("v_id", zap.String("id", v))
+		_, err := smtp.ExecContext(ctx, userID, v)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
 }

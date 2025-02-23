@@ -133,3 +133,7 @@ func (s ShortenerService) GetURLSByUserID(ctx context.Context, userID string) ([
 	logger.Log.Debug(fmt.Sprintf("test data %v", responseURLs))
 	return responseURLs, err
 }
+
+func (s ShortenerService) DeleteUserURLS(ctx context.Context, items []string) error {
+	return s.repository.DeleteUserURLS(ctx, items)
+}
