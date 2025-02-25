@@ -159,8 +159,6 @@ func (s ShortenerService) Worker(ctx context.Context, wg *sync.WaitGroup) {
 	ticker := time.NewTicker(time.Second * 10)
 
 	go func() {
-		s.mx.Lock()
-		defer s.mx.Unlock()
 		for {
 			select {
 			case item, ok := <-s.deleteChan:

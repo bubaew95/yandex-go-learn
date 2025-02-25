@@ -168,13 +168,14 @@ func (p ShortenerRepository) DeleteUserURLS(ctx context.Context, items []model.U
 	}
 	defer tx.Rollback()
 
-	stmt, err := tx.PrepareContext(ctx, "UPDATE shortener SET is_deleted = true WHERE is_deleted = false AND user_id = $1 AND id = $2")
+	stmt, err := tx.PrepareContext(ctx, "UPDATE shortener SET is_deleted = true WHERE user_id = $1 and id = $2")
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
 	for _, item := range items {
+		logger.Log.Debug("v_id", zap.String("id", item.ShortLink))
 		_, err := stmt.ExecContext(ctx, item.UserID, item.ShortLink)
 		if err != nil {
 			return err
