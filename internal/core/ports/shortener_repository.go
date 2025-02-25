@@ -14,7 +14,7 @@ type ShortenerRepository interface {
 	GetAllURL(ctx context.Context) map[string]string
 	InsertURLs(ctx context.Context, urls []model.ShortenerURLMapping) error
 	GetURLSByUserID(ctx context.Context, userID string) (map[string]string, error)
-	DeleteUserURLS(ctx context.Context, items []string) error
+	DeleteUserURLS(ctx context.Context, items []model.URLToDelete) error
 
 	Ping() error
 	Close() error

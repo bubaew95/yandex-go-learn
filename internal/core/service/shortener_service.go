@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/bubaew95/yandex-go-learn/config"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/logger"
@@ -17,6 +18,7 @@ type ShortenerService struct {
 	repository ports.ShortenerRepository
 	config     config.Config
 	mx         *sync.Mutex
+	deleteChan chan model.URLToDelete
 }
 
 func NewShortenerService(r ports.ShortenerRepository, cfg config.Config) *ShortenerService {
@@ -24,7 +26,16 @@ func NewShortenerService(r ports.ShortenerRepository, cfg config.Config) *Shorte
 		repository: r,
 		config:     cfg,
 		mx:         &sync.Mutex{},
+		deleteChan: make(chan model.URLToDelete),
 	}
+}
+
+func (s ShortenerService) ScheduleURLDeletion(ctx context.Context, items []model.URLToDelete) {
+	go func() {
+		for _, item := range items {
+			s.deleteChan <- item
+		}
+	}()
 }
 
 func (s ShortenerService) GenerateURL(ctx context.Context, url string, randomStringLength int) (string, error) {
@@ -134,6 +145,40 @@ func (s ShortenerService) GetURLSByUserID(ctx context.Context, userID string) ([
 	return responseURLs, err
 }
 
-func (s ShortenerService) DeleteUserURLS(ctx context.Context, items []string) error {
+func (s ShortenerService) DeleteUserURLS(ctx context.Context, items []model.URLToDelete) error {
+	if len(items) == 0 {
+		return nil
+	}
+
 	return s.repository.DeleteUserURLS(ctx, items)
+}
+
+func (s ShortenerService) Worker(ctx context.Context, wg *sync.WaitGroup) {
+	limit := 2
+	batch := make([]model.URLToDelete, 0, limit)
+	ticker := time.NewTicker(time.Second * 10)
+
+	go func() {
+		for {
+			select {
+			case item, ok := <-s.deleteChan:
+				if !ok {
+					if len(batch) > 0 {
+						s.DeleteUserURLS(ctx, batch)
+					}
+					return
+				}
+
+				if len(batch) >= limit {
+					s.DeleteUserURLS(ctx, batch)
+					batch = batch[:0]
+				}
+
+				batch = append(batch, item)
+			case <-ticker.C:
+				s.DeleteUserURLS(ctx, batch)
+				batch = batch[:0]
+			}
+		}
+	}()
 }

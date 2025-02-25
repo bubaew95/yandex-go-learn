@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"sync"
 
 	"github.com/bubaew95/yandex-go-learn/config"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/handlers"
@@ -39,9 +41,14 @@ func runApp() error {
 	}
 	defer safeClose(shortenerRepository)
 
-	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
-	shortenerHandler := handlers.NewShortenerHandler(shortenerService)
+	var wg sync.WaitGroup
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
+	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
+	shortenerService.Worker(ctx, &wg)
+
+	shortenerHandler := handlers.NewShortenerHandler(shortenerService)
 	route := setupRouter(shortenerHandler)
 
 	logger.Log.Info("Running server", zap.String("port", cfg.Port))

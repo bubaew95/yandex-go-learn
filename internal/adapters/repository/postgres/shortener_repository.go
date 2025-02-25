@@ -161,23 +161,22 @@ func (p ShortenerRepository) GetURLSByUserID(ctx context.Context, userID string)
 	return items, nil
 }
 
-func (p ShortenerRepository) DeleteUserURLS(ctx context.Context, items []string) error {
-	userID := ctx.Value(crypto.KeyUserID)
+func (p ShortenerRepository) DeleteUserURLS(ctx context.Context, items []model.URLToDelete) error {
 	tx, err := p.db.Begin()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	smtp, err := tx.PrepareContext(ctx, "UPDATE shortener SET is_deleted = true WHERE user_id = $1 and id = $2")
+	stmt, err := tx.PrepareContext(ctx, "UPDATE shortener SET is_deleted = true WHERE user_id = $1 and id = $2")
 	if err != nil {
 		return err
 	}
-	defer smtp.Close()
+	defer stmt.Close()
 
-	for _, v := range items {
-		logger.Log.Debug("v_id", zap.String("id", v))
-		_, err := smtp.ExecContext(ctx, userID, v)
+	for _, item := range items {
+		logger.Log.Debug("v_id", zap.String("id", item.ShortLink))
+		_, err := stmt.ExecContext(ctx, item.UserID, item.ShortLink)
 		if err != nil {
 			return err
 		}

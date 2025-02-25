@@ -93,6 +93,6 @@ func (s ShortenerRepository) GetURLSByUserID(ctx context.Context, userID string)
 	return nil, nil
 }
 
-func (s ShortenerRepository) DeleteUserURLS(ctx context.Context, urls []string) error {
+func (s ShortenerRepository) DeleteUserURLS(ctx context.Context, items []model.URLToDelete) error {
 	return nil
 }

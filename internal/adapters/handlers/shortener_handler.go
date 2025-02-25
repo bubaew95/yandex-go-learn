@@ -185,8 +185,8 @@ func (s ShortenerHandler) GetUserURLS(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s ShortenerHandler) DeleteUserURLS(w http.ResponseWriter, r *http.Request) {
-	_, err := r.Cookie("user_id")
-	if err != nil {
+	userID, err := r.Cookie("user_id")
+	if err != nil || userID.Value == "" {
 		logger.Log.Debug("Cookie not found")
 		w.WriteHeader(http.StatusNoContent)
 		return
@@ -199,12 +199,15 @@ func (s ShortenerHandler) DeleteUserURLS(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	err = s.service.DeleteUserURLS(r.Context(), deleteItems)
-	if err != nil {
-		logger.Log.Debug("Error insert urls by batch", zap.Error(err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+	delete := make([]model.URLToDelete, 0, len(deleteItems))
+	for _, item := range deleteItems {
+		delete = append(delete, model.URLToDelete{
+			ShortLink: item,
+			UserID:    userID.Value,
+		})
 	}
+
+	s.service.ScheduleURLDeletion(r.Context(), delete)
 
 	logger.Log.Debug("Urls deleted")
 	w.WriteHeader(http.StatusAccepted)

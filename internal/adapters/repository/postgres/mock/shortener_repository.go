@@ -50,17 +50,17 @@ func (mr *MockShortenerRepositoryMockRecorder) Close() *gomock.Call {
 }
 
 // DeleteUserURLS mocks base method.
-func (m *MockShortenerRepository) DeleteUserURLS(ctx context.Context, urls []string) error {
+func (m *MockShortenerRepository) DeleteUserURLS(ctx context.Context, items []model.URLToDelete) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteUserURLS", ctx, urls)
+	ret := m.ctrl.Call(m, "DeleteUserURLS", ctx, items)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteUserURLS indicates an expected call of DeleteUserURLS.
-func (mr *MockShortenerRepositoryMockRecorder) DeleteUserURLS(ctx, urls interface{}) *gomock.Call {
+func (mr *MockShortenerRepositoryMockRecorder) DeleteUserURLS(ctx, items interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUserURLS", reflect.TypeOf((*MockShortenerRepository)(nil).DeleteUserURLS), ctx, urls)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUserURLS", reflect.TypeOf((*MockShortenerRepository)(nil).DeleteUserURLS), ctx, items)
 }
 
 // GetAllURL mocks base method.
