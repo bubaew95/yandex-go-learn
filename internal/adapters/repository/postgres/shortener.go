@@ -7,9 +7,9 @@ import (
 	"fmt"
 
 	"github.com/bubaew95/yandex-go-learn/config"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/constants"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/logger"
 	"github.com/bubaew95/yandex-go-learn/internal/core/model"
-	"github.com/bubaew95/yandex-go-learn/internal/core/ports"
 	"github.com/bubaew95/yandex-go-learn/pkg/crypto"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -68,24 +68,31 @@ func (p ShortenerRepository) SetURL(ctx context.Context, id string, url string) 
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgerrcode.IsIntegrityConstraintViolation(pgErr.Code) {
-			err = ports.ErrUniqueIndex
+			err = constants.ErrUniqueIndex
 		}
 	}
 
 	return err
 }
 
-func (p ShortenerRepository) GetURLByID(ctx context.Context, id string) (string, bool) {
-	var url string
+func (p ShortenerRepository) GetURLByID(ctx context.Context, id string) (string, error) {
+	var (
+		url        string
+		is_deleted bool
+	)
 
 	row := p.db.QueryRowContext(ctx,
-		"SELECT url FROM shortener WHERE id = $1 and is_deleted = false", id)
-	err := row.Scan(&url)
+		"SELECT url, is_deleted FROM shortener WHERE id = $1", id)
+	err := row.Scan(&url, &is_deleted)
 	if err != nil {
-		return "", false
+		return "", err
 	}
 
-	return url, true
+	if is_deleted {
+		return "", constants.ErrIsDeleted
+	}
+
+	return url, nil
 }
 
 func (p ShortenerRepository) GetURLByOriginalURL(ctx context.Context, originalURL string) (string, bool) {
@@ -102,10 +109,6 @@ func (p ShortenerRepository) GetURLByOriginalURL(ctx context.Context, originalUR
 	}
 
 	return id, true
-}
-
-func (p ShortenerRepository) GetAllURL(ctx context.Context) map[string]string {
-	return nil
 }
 
 func (p ShortenerRepository) InsertURLs(ctx context.Context, urls []model.ShortenerURLMapping) error {

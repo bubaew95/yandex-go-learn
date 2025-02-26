@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/constants"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/logger"
 	"github.com/bubaew95/yandex-go-learn/internal/core/model"
 	"github.com/bubaew95/yandex-go-learn/internal/core/ports"
@@ -62,7 +63,7 @@ func (s ShortenerHandler) CreateURL(res http.ResponseWriter, req *http.Request) 
 
 	url, err := s.service.GenerateURL(req.Context(), body, randomStringLength)
 	if err != nil {
-		if errors.Is(err, ports.ErrUniqueIndex) {
+		if errors.Is(err, constants.ErrUniqueIndex) {
 			originURL, ok := s.service.GetURLByOriginalURL(req.Context(), body)
 
 			if ok {
@@ -84,10 +85,16 @@ func (s ShortenerHandler) CreateURL(res http.ResponseWriter, req *http.Request) 
 func (s ShortenerHandler) GetURL(res http.ResponseWriter, req *http.Request) {
 	id := chi.URLParam(req, "id")
 
-	url, ok := s.service.GetURLByID(req.Context(), id)
-	if !ok {
+	url, err := s.service.GetURLByID(req.Context(), id)
+	if err != nil || url == "" {
+		if errors.Is(err, constants.ErrIsDeleted) {
+			logger.Log.Debug("Url is deleted", zap.String("id", id))
+			res.WriteHeader(http.StatusGone)
+			return
+		}
+
 		logger.Log.Debug("Url not found by id", zap.String("id", id))
-		res.WriteHeader(http.StatusGone)
+		res.WriteHeader(http.StatusNotFound)
 		return
 	}
 
@@ -106,7 +113,7 @@ func (s ShortenerHandler) AddNewURL(res http.ResponseWriter, req *http.Request) 
 
 	url, err := s.service.GenerateURL(req.Context(), requestBody.URL, randomStringLength)
 	if err != nil {
-		if errors.Is(err, ports.ErrUniqueIndex) {
+		if errors.Is(err, constants.ErrUniqueIndex) {
 			originURL, ok := s.service.GetURLByOriginalURL(req.Context(), requestBody.URL)
 			if ok {
 				responseModel := model.ShortenerResponse{

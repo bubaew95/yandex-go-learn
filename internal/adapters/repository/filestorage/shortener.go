@@ -2,6 +2,7 @@ package filestorage
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"sync"
 
@@ -47,12 +48,16 @@ func (s ShortenerRepository) SetURL(ctx context.Context, id string, url string) 
 	return s.shortenerDB.Save(data)
 }
 
-func (s ShortenerRepository) GetURLByID(ctx context.Context, id string) (string, bool) {
+func (s ShortenerRepository) GetURLByID(ctx context.Context, id string) (string, error) {
 	s.mx.RLock()
 	defer s.mx.RUnlock()
 
 	url, ok := s.cache[id]
-	return url, ok
+	if !ok {
+		return "", errors.New("not found")
+	}
+
+	return url, nil
 }
 
 func (s ShortenerRepository) GetURLByOriginalURL(ctx context.Context, originalURL string) (string, bool) {
@@ -68,18 +73,14 @@ func (s ShortenerRepository) GetURLByOriginalURL(ctx context.Context, originalUR
 	return "", false
 }
 
-func (s ShortenerRepository) GetAllURL(ctx context.Context) map[string]string {
-	return s.cache
-}
-
 func (s ShortenerRepository) Ping() error {
 	return nil
 }
 
 func (s ShortenerRepository) InsertURLs(ctx context.Context, urls []model.ShortenerURLMapping) error {
 	for _, v := range urls {
-		_, existsURL := s.GetURLByID(ctx, v.CorrelationID)
-		if existsURL {
+		_, err := s.GetURLByID(ctx, v.CorrelationID)
+		if err == nil {
 			continue
 		}
 

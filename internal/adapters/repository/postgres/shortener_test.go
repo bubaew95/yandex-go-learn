@@ -9,6 +9,7 @@ import (
 	"github.com/bubaew95/yandex-go-learn/internal/core/model"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetURLByID(t *testing.T) {
@@ -21,11 +22,11 @@ func TestGetURLByID(t *testing.T) {
 	value := "http://noriba.ru"
 	m.EXPECT().
 		GetURLByID(ctx, "SXhhC3").
-		Return(value, true)
+		Return(value, nil)
 
-	url, ok := m.GetURLByID(ctx, "SXhhC3")
+	url, err := m.GetURLByID(ctx, "SXhhC3")
+	require.NoError(t, err)
 	assert.Equal(t, url, value)
-	assert.True(t, ok)
 }
 
 func TestInsertURLError(t *testing.T) {

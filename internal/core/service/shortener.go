@@ -45,9 +45,9 @@ func (s ShortenerService) GenerateURL(ctx context.Context, url string, randomStr
 	var genID string
 	for {
 		genID = s.RandStringBytes(randomStringLength)
+		_, err := s.repository.GetURLByID(ctx, genID)
 
-		_, existsURL := s.repository.GetURLByID(ctx, genID)
-		if !existsURL {
+		if err != nil {
 			err := s.repository.SetURL(ctx, genID, url)
 			if err != nil {
 				return "", err
@@ -72,7 +72,7 @@ func (s ShortenerService) RandStringBytes(n int) string {
 	return string(b)
 }
 
-func (s ShortenerService) GetURLByID(ctx context.Context, id string) (string, bool) {
+func (s ShortenerService) GetURLByID(ctx context.Context, id string) (string, error) {
 	return s.repository.GetURLByID(ctx, id)
 }
 
@@ -84,10 +84,6 @@ func (s ShortenerService) GetURLByOriginalURL(ctx context.Context, originalURL s
 	}
 
 	return id, ok
-}
-
-func (s ShortenerService) GetAllURL(ctx context.Context) map[string]string {
-	return s.repository.GetAllURL(ctx)
 }
 
 func (s ShortenerService) Ping() error {
