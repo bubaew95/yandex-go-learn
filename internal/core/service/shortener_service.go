@@ -178,6 +178,8 @@ func (s ShortenerService) Worker(ctx context.Context, wg *sync.WaitGroup) {
 			case <-ticker.C:
 				s.DeleteUserURLS(ctx, batch)
 				batch = batch[:0]
+			case <-ctx.Done():
+				return
 			}
 		}
 	}()
