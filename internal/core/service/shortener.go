@@ -153,7 +153,7 @@ func (s ShortenerService) DeleteUserURLS(ctx context.Context, items []model.URLT
 	return s.repository.DeleteUserURLS(ctx, items)
 }
 
-func (s ShortenerService) Worker(ctx context.Context, wg *sync.WaitGroup) {
+func (s ShortenerService) Run(ctx context.Context, wg *sync.WaitGroup) {
 	limit := 2
 	batch := make([]model.URLToDelete, 0, limit)
 	ticker := time.NewTicker(time.Second * 10)
