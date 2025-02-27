@@ -150,7 +150,7 @@ func (s ShortenerService) ScheduleURLDeletion(ctx context.Context, items []model
 }
 
 func (s ShortenerService) Run(ctx context.Context, wg *sync.WaitGroup) {
-	limit := 2
+	limit := 100
 	batch := make([]model.URLToDelete, 0, limit)
 	ticker := time.NewTicker(time.Second * 5)
 
