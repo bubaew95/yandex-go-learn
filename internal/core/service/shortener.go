@@ -33,7 +33,11 @@ func NewShortenerService(r ports.ShortenerRepository, cfg config.Config) *Shorte
 func (s ShortenerService) ScheduleURLDeletion(ctx context.Context, items []model.URLToDelete) {
 	go func() {
 		for _, item := range items {
-			s.deleteChan <- item
+			select {
+			case s.deleteChan <- item:
+			case <-ctx.Done():
+				return
+			}
 		}
 	}()
 }
@@ -150,7 +154,7 @@ func (s ShortenerService) DeleteUserURLS(ctx context.Context, items []model.URLT
 }
 
 func (s ShortenerService) Run(ctx context.Context, wg *sync.WaitGroup) {
-	limit := 2
+	limit := 100
 	batch := make([]model.URLToDelete, 0, limit)
 	ticker := time.NewTicker(time.Second * 10)
 

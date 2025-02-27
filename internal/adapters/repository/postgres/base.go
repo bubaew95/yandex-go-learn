@@ -2,11 +2,12 @@ package postgres
 
 import "database/sql"
 
-func dbConnect(connStr string) *sql.DB {
+func dbConnect(connStr string) (*sql.DB, error) {
 	db, err := sql.Open("pgx", connStr)
+
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	return db
+	return db, nil
 }

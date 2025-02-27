@@ -22,8 +22,12 @@ type ShortenerRepository struct {
 }
 
 func NewShortenerRepository(ctg config.Config) (*ShortenerRepository, error) {
-	db := dbConnect(ctg.DataBaseDSN)
-	err := createTable(db)
+	db, err := dbConnect(ctg.DataBaseDSN)
+	if err != nil {
+		return nil, err
+	}
+
+	err = createTable(db)
 
 	if err != nil {
 		return nil, err
