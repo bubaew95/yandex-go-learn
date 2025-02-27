@@ -81,18 +81,18 @@ func (p ShortenerRepository) SetURL(ctx context.Context, id string, url string) 
 
 func (p ShortenerRepository) GetURLByID(ctx context.Context, id string) (string, error) {
 	var (
-		url        string
-		is_deleted bool
+		url       string
+		isDeleted bool
 	)
 
 	row := p.db.QueryRowContext(ctx,
 		"SELECT url, is_deleted FROM shortener WHERE id = $1", id)
-	err := row.Scan(&url, &is_deleted)
+	err := row.Scan(&url, &isDeleted)
 	if err != nil {
 		return "", err
 	}
 
-	if is_deleted {
+	if isDeleted {
 		return "", constants.ErrIsDeleted
 	}
 
