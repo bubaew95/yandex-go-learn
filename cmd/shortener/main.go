@@ -55,12 +55,12 @@ func runApp() error {
 	shortenerHandler := handlers.NewShortenerHandler(shortenerService)
 	route := setupRouter(shortenerHandler)
 
-	wg.Wait()
 	logger.Log.Info("Running server", zap.String("port", cfg.Port))
 	if err := http.ListenAndServe(cfg.Port, route); err != nil {
 		return fmt.Errorf("server startup error: %w", err)
 	}
 
+	wg.Wait()
 	return nil
 }
 
