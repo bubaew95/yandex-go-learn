@@ -46,11 +46,7 @@ func runApp() error {
 	defer cancel()
 
 	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		shortenerService.Run(ctx, &wg)
-	}()
+	shortenerService.Run(ctx, &wg)
 
 	shortenerHandler := handlers.NewShortenerHandler(shortenerService)
 	route := setupRouter(shortenerHandler)
@@ -60,7 +56,7 @@ func runApp() error {
 		return fmt.Errorf("server startup error: %w", err)
 	}
 
-	wg.Wait()
+	// wg.Wait()
 	return nil
 }
 
