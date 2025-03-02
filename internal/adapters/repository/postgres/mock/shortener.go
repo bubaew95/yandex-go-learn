@@ -7,7 +7,6 @@ package mock
 import (
 	context "context"
 	reflect "reflect"
-	sync "sync"
 
 	model "github.com/bubaew95/yandex-go-learn/internal/core/model"
 	gomock "github.com/golang/mock/gomock"
@@ -62,20 +61,6 @@ func (m *MockShortenerRepository) DeleteUserURLS(ctx context.Context, items []mo
 func (mr *MockShortenerRepositoryMockRecorder) DeleteUserURLS(ctx, items interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUserURLS", reflect.TypeOf((*MockShortenerRepository)(nil).DeleteUserURLS), ctx, items)
-}
-
-// GetAllURL mocks base method.
-func (m *MockShortenerRepository) GetAllURL(ctx context.Context) map[string]string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllURL", ctx)
-	ret0, _ := ret[0].(map[string]string)
-	return ret0
-}
-
-// GetAllURL indicates an expected call of GetAllURL.
-func (mr *MockShortenerRepositoryMockRecorder) GetAllURL(ctx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllURL", reflect.TypeOf((*MockShortenerRepository)(nil).GetAllURL), ctx)
 }
 
 // GetURLByID mocks base method.
@@ -138,17 +123,17 @@ func (mr *MockShortenerRepositoryMockRecorder) InsertURLs(ctx, urls interface{})
 }
 
 // Ping mocks base method.
-func (m *MockShortenerRepository) Ping() error {
+func (m *MockShortenerRepository) Ping(ctx context.Context) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Ping")
+	ret := m.ctrl.Call(m, "Ping", ctx)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Ping indicates an expected call of Ping.
-func (mr *MockShortenerRepositoryMockRecorder) Ping() *gomock.Call {
+func (mr *MockShortenerRepositoryMockRecorder) Ping(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ping", reflect.TypeOf((*MockShortenerRepository)(nil).Ping))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ping", reflect.TypeOf((*MockShortenerRepository)(nil).Ping), ctx)
 }
 
 // SetURL mocks base method.
@@ -217,20 +202,6 @@ func (mr *MockShortenerServiceMockRecorder) GenerateURL(ctx, url, randomStringLe
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateURL", reflect.TypeOf((*MockShortenerService)(nil).GenerateURL), ctx, url, randomStringLength)
 }
 
-// GetAllURL mocks base method.
-func (m *MockShortenerService) GetAllURL(ctx context.Context) map[string]string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllURL", ctx)
-	ret0, _ := ret[0].(map[string]string)
-	return ret0
-}
-
-// GetAllURL indicates an expected call of GetAllURL.
-func (mr *MockShortenerServiceMockRecorder) GetAllURL(ctx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllURL", reflect.TypeOf((*MockShortenerService)(nil).GetAllURL), ctx)
-}
-
 // GetURLByID mocks base method.
 func (m *MockShortenerService) GetURLByID(ctx context.Context, id string) (string, error) {
 	m.ctrl.T.Helper()
@@ -292,17 +263,17 @@ func (mr *MockShortenerServiceMockRecorder) InsertURLs(ctx, urls interface{}) *g
 }
 
 // Ping mocks base method.
-func (m *MockShortenerService) Ping() error {
+func (m *MockShortenerService) Ping(ctx context.Context) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Ping")
+	ret := m.ctrl.Call(m, "Ping", ctx)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Ping indicates an expected call of Ping.
-func (mr *MockShortenerServiceMockRecorder) Ping() *gomock.Call {
+func (mr *MockShortenerServiceMockRecorder) Ping(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ping", reflect.TypeOf((*MockShortenerService)(nil).Ping))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ping", reflect.TypeOf((*MockShortenerService)(nil).Ping), ctx)
 }
 
 // RandStringBytes mocks base method.
@@ -317,18 +288,6 @@ func (m *MockShortenerService) RandStringBytes(n int) string {
 func (mr *MockShortenerServiceMockRecorder) RandStringBytes(n interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RandStringBytes", reflect.TypeOf((*MockShortenerService)(nil).RandStringBytes), n)
-}
-
-// Run mocks base method.
-func (m *MockShortenerService) Run(ctx context.Context, wg *sync.WaitGroup) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Run", ctx, wg)
-}
-
-// Run indicates an expected call of Run.
-func (mr *MockShortenerServiceMockRecorder) Run(ctx, wg interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Run", reflect.TypeOf((*MockShortenerService)(nil).Run), ctx, wg)
 }
 
 // ScheduleURLDeletion mocks base method.

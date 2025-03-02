@@ -138,7 +138,7 @@ func (s ShortenerHandler) AddNewURL(res http.ResponseWriter, req *http.Request) 
 }
 
 func (s ShortenerHandler) Ping(w http.ResponseWriter, r *http.Request) {
-	if err := s.service.Ping(); err != nil {
+	if err := s.service.Ping(r.Context()); err != nil {
 		fmt.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return

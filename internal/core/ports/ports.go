@@ -2,7 +2,6 @@ package ports
 
 import (
 	"context"
-	"sync"
 
 	"github.com/bubaew95/yandex-go-learn/internal/core/model"
 )
@@ -15,7 +14,7 @@ type ShortenerRepository interface {
 	GetURLSByUserID(ctx context.Context, userID string) (map[string]string, error)
 	DeleteUserURLS(ctx context.Context, items []model.URLToDelete) error
 
-	Ping() error
+	Ping(ctx context.Context) error
 	Close() error
 }
 
@@ -27,9 +26,8 @@ type ShortenerService interface {
 	GetURLSByUserID(ctx context.Context, userID string) ([]model.ShortenerURLSForUserResponse, error)
 	DeleteUserURLS(ctx context.Context, items []model.URLToDelete) error
 
-	Run(ctx context.Context, wg *sync.WaitGroup)
 	ScheduleURLDeletion(ctx context.Context, items []model.URLToDelete)
 
 	RandStringBytes(n int) string
-	Ping() error
+	Ping(ctx context.Context) error
 }

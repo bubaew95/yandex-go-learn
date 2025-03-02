@@ -57,8 +57,8 @@ func (p ShortenerRepository) Close() error {
 	return p.db.Close()
 }
 
-func (p ShortenerRepository) Ping() error {
-	return p.db.Ping()
+func (p ShortenerRepository) Ping(ctx context.Context) error {
+	return p.db.PingContext(ctx)
 }
 
 func (p ShortenerRepository) SetURL(ctx context.Context, id string, url string) error {

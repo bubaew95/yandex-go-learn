@@ -78,8 +78,8 @@ func (s ShortenerService) GetURLByOriginalURL(ctx context.Context, originalURL s
 	return id, ok
 }
 
-func (s ShortenerService) Ping() error {
-	return s.repository.Ping()
+func (s ShortenerService) Ping(ctx context.Context) error {
+	return s.repository.Ping(ctx)
 }
 
 func (s ShortenerService) generateResponseURL(id string) string {

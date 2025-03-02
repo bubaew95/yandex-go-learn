@@ -73,7 +73,7 @@ func (s ShortenerRepository) GetURLByOriginalURL(ctx context.Context, originalUR
 	return "", false
 }
 
-func (s ShortenerRepository) Ping() error {
+func (s ShortenerRepository) Ping(ctx context.Context) error {
 	return nil
 }
 
