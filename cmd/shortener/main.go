@@ -56,7 +56,7 @@ func runApp() error {
 		return fmt.Errorf("server startup error: %w", err)
 	}
 
-	// wg.Wait()
+	wg.Wait()
 	return nil
 }
 

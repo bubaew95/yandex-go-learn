@@ -154,7 +154,10 @@ func (s ShortenerService) Run(ctx context.Context, wg *sync.WaitGroup) {
 	batch := make([]model.URLToDelete, 0, limit)
 	ticker := time.NewTicker(time.Second * 5)
 
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
+
 		for {
 			select {
 			case item, ok := <-s.deleteChan:
