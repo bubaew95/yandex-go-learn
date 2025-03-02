@@ -6,8 +6,10 @@ import (
 	"math/rand"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/bubaew95/yandex-go-learn/config"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/logger"
 	"github.com/bubaew95/yandex-go-learn/internal/core/model"
 	"github.com/bubaew95/yandex-go-learn/internal/core/ports"
 )
@@ -16,6 +18,7 @@ type ShortenerService struct {
 	repository ports.ShortenerRepository
 	config     config.Config
 	mx         *sync.Mutex
+	deleteChan chan model.URLToDelete
 }
 
 func NewShortenerService(r ports.ShortenerRepository, cfg config.Config) *ShortenerService {
@@ -23,6 +26,7 @@ func NewShortenerService(r ports.ShortenerRepository, cfg config.Config) *Shorte
 		repository: r,
 		config:     cfg,
 		mx:         &sync.Mutex{},
+		deleteChan: make(chan model.URLToDelete),
 	}
 }
 
@@ -33,9 +37,9 @@ func (s ShortenerService) GenerateURL(ctx context.Context, url string, randomStr
 	var genID string
 	for {
 		genID = s.RandStringBytes(randomStringLength)
+		_, err := s.repository.GetURLByID(ctx, genID)
 
-		_, existsURL := s.repository.GetURLByID(ctx, genID)
-		if !existsURL {
+		if err != nil {
 			err := s.repository.SetURL(ctx, genID, url)
 			if err != nil {
 				return "", err
@@ -60,7 +64,7 @@ func (s ShortenerService) RandStringBytes(n int) string {
 	return string(b)
 }
 
-func (s ShortenerService) GetURLByID(ctx context.Context, id string) (string, bool) {
+func (s ShortenerService) GetURLByID(ctx context.Context, id string) (string, error) {
 	return s.repository.GetURLByID(ctx, id)
 }
 
@@ -74,12 +78,8 @@ func (s ShortenerService) GetURLByOriginalURL(ctx context.Context, originalURL s
 	return id, ok
 }
 
-func (s ShortenerService) GetAllURL(ctx context.Context) map[string]string {
-	return s.repository.GetAllURL(ctx)
-}
-
-func (s ShortenerService) Ping() error {
-	return s.repository.Ping()
+func (s ShortenerService) Ping(ctx context.Context) error {
+	return s.repository.Ping(ctx)
 }
 
 func (s ShortenerService) generateResponseURL(id string) string {
@@ -114,4 +114,72 @@ func (s ShortenerService) InsertURLs(ctx context.Context, urls []model.Shortener
 
 func isEmpty(t string) bool {
 	return strings.TrimSpace(t) == ""
+}
+
+func (s ShortenerService) GetURLSByUserID(ctx context.Context, userID string) ([]model.ShortenerURLSForUserResponse, error) {
+	items, err := s.repository.GetURLSByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	var responseURLs []model.ShortenerURLSForUserResponse
+	for k, v := range items {
+		responseURLs = append(responseURLs, model.ShortenerURLSForUserResponse{
+			OriginalURL: v,
+			ShortURL:    s.generateResponseURL(k),
+		})
+	}
+	logger.Log.Debug(fmt.Sprintf("test data %v", responseURLs))
+	return responseURLs, err
+}
+
+func (s ShortenerService) DeleteUserURLS(ctx context.Context, items []model.URLToDelete) error {
+	if len(items) == 0 {
+		return nil
+	}
+
+	return s.repository.DeleteUserURLS(ctx, items)
+}
+
+func (s ShortenerService) ScheduleURLDeletion(ctx context.Context, items []model.URLToDelete) {
+	go func() {
+		for _, item := range items {
+			s.deleteChan <- item
+		}
+	}()
+}
+
+func (s ShortenerService) Run(ctx context.Context, wg *sync.WaitGroup) {
+	limit := 100
+	batch := make([]model.URLToDelete, 0, limit)
+	ticker := time.NewTicker(time.Second * 5)
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		for {
+			select {
+			case item, ok := <-s.deleteChan:
+				if !ok {
+					if len(batch) > 0 {
+						s.DeleteUserURLS(ctx, batch)
+					}
+					return
+				}
+
+				if len(batch) >= limit {
+					s.DeleteUserURLS(ctx, batch)
+					batch = batch[:0]
+				}
+
+				batch = append(batch, item)
+			case <-ticker.C:
+				s.DeleteUserURLS(ctx, batch)
+				batch = batch[:0]
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
 }

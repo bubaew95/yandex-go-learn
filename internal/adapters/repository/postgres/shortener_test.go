@@ -1,38 +1,39 @@
-package repository
+package postgres
 
 import (
 	"context"
 	"errors"
 	"testing"
 
-	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/mock"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/postgres/mock"
 	"github.com/bubaew95/yandex-go-learn/internal/core/model"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetURLByID(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	m := mock.NewMockShortenerRepositoryInterface(ctrl)
+	m := mock.NewMockShortenerRepository(ctrl)
 	ctx := context.Background()
 
 	value := "http://noriba.ru"
 	m.EXPECT().
 		GetURLByID(ctx, "SXhhC3").
-		Return(value, true)
+		Return(value, nil)
 
-	url, ok := m.GetURLByID(ctx, "SXhhC3")
+	url, err := m.GetURLByID(ctx, "SXhhC3")
+	require.NoError(t, err)
 	assert.Equal(t, url, value)
-	assert.True(t, ok)
 }
 
 func TestInsertURLError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	m := mock.NewMockShortenerRepositoryInterface(ctrl)
+	m := mock.NewMockShortenerRepository(ctrl)
 	ctx := context.Background()
 
 	data := []model.ShortenerURLMapping{
@@ -53,7 +54,7 @@ func TestInsertURLSuccess(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	m := mock.NewMockShortenerRepositoryInterface(ctrl)
+	m := mock.NewMockShortenerRepository(ctrl)
 	ctx := context.Background()
 
 	data := []model.ShortenerURLMapping{

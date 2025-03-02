@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/constants"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/logger"
 	"github.com/bubaew95/yandex-go-learn/internal/core/model"
 	"github.com/bubaew95/yandex-go-learn/internal/core/ports"
@@ -29,6 +30,23 @@ func NewShortenerHandler(s ports.ShortenerService) *ShortenerHandler {
 	}
 }
 
+func writeJSONResponse(res http.ResponseWriter, statusCode int, data interface{}) {
+	res.Header().Set("Content-Type", "application/json")
+	res.WriteHeader(statusCode)
+
+	if err := json.NewEncoder(res).Encode(data); err != nil {
+		logger.Log.Debug("Cannot encode JSON", zap.Error(err))
+	}
+}
+
+func writeByteResponse(res http.ResponseWriter, statusCode int, data []byte) {
+	res.WriteHeader(statusCode)
+	res.Header().Set("content-type", "text/plain")
+	res.Header().Set("content-length", strconv.Itoa(len(data)))
+
+	res.Write(data)
+}
+
 func (s ShortenerHandler) CreateURL(res http.ResponseWriter, req *http.Request) {
 	responseData, err := io.ReadAll(req.Body)
 	if err != nil {
@@ -45,7 +63,7 @@ func (s ShortenerHandler) CreateURL(res http.ResponseWriter, req *http.Request) 
 
 	url, err := s.service.GenerateURL(req.Context(), body, randomStringLength)
 	if err != nil {
-		if errors.Is(err, ports.ErrUniqueIndex) {
+		if errors.Is(err, constants.ErrUniqueIndex) {
 			originURL, ok := s.service.GetURLByOriginalURL(req.Context(), body)
 
 			if ok {
@@ -67,8 +85,14 @@ func (s ShortenerHandler) CreateURL(res http.ResponseWriter, req *http.Request) 
 func (s ShortenerHandler) GetURL(res http.ResponseWriter, req *http.Request) {
 	id := chi.URLParam(req, "id")
 
-	url, ok := s.service.GetURLByID(req.Context(), id)
-	if !ok {
+	url, err := s.service.GetURLByID(req.Context(), id)
+	if err != nil || url == "" {
+		if errors.Is(err, constants.ErrIsDeleted) {
+			logger.Log.Debug("Url is deleted", zap.String("id", id))
+			res.WriteHeader(http.StatusGone)
+			return
+		}
+
 		logger.Log.Debug("Url not found by id", zap.String("id", id))
 		res.WriteHeader(http.StatusNotFound)
 		return
@@ -89,14 +113,14 @@ func (s ShortenerHandler) AddNewURL(res http.ResponseWriter, req *http.Request) 
 
 	url, err := s.service.GenerateURL(req.Context(), requestBody.URL, randomStringLength)
 	if err != nil {
-		if errors.Is(err, ports.ErrUniqueIndex) {
+		if errors.Is(err, constants.ErrUniqueIndex) {
 			originURL, ok := s.service.GetURLByOriginalURL(req.Context(), requestBody.URL)
 			if ok {
 				responseModel := model.ShortenerResponse{
 					Result: originURL,
 				}
 
-				writeJSONResponse(res, http.StatusConflict, responseModel, logger.Log)
+				writeJSONResponse(res, http.StatusConflict, responseModel)
 				return
 			}
 		}
@@ -110,11 +134,11 @@ func (s ShortenerHandler) AddNewURL(res http.ResponseWriter, req *http.Request) 
 		Result: url,
 	}
 
-	writeJSONResponse(res, http.StatusCreated, responseModel, logger.Log)
+	writeJSONResponse(res, http.StatusCreated, responseModel)
 }
 
 func (s ShortenerHandler) Ping(w http.ResponseWriter, r *http.Request) {
-	if err := s.service.Ping(); err != nil {
+	if err := s.service.Ping(r.Context()); err != nil {
 		fmt.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -140,22 +164,58 @@ func (s ShortenerHandler) Batch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSONResponse(w, http.StatusCreated, items, logger.Log)
+	writeJSONResponse(w, http.StatusCreated, items)
 }
 
-func writeJSONResponse(res http.ResponseWriter, statusCode int, data interface{}, logger *zap.Logger) {
-	res.Header().Set("Content-Type", "application/json")
-	res.WriteHeader(statusCode)
-
-	if err := json.NewEncoder(res).Encode(data); err != nil {
-		logger.Debug("Cannot encode JSON", zap.Error(err))
+func (s ShortenerHandler) GetUserURLS(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("user_id")
+	if err != nil {
+		logger.Log.Debug("Cookie not found")
+		w.WriteHeader(http.StatusNoContent)
+		return
 	}
+
+	items, err := s.service.GetURLSByUserID(r.Context(), cookie.Value)
+	if err != nil {
+		logger.Log.Debug("Get urls error", zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if items == nil {
+		logger.Log.Debug("User urls not found")
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	writeJSONResponse(w, http.StatusOK, items)
 }
 
-func writeByteResponse(res http.ResponseWriter, statusCode int, data []byte) {
-	res.WriteHeader(statusCode)
-	res.Header().Set("content-type", "text/plain")
-	res.Header().Set("content-length", strconv.Itoa(len(data)))
+func (s ShortenerHandler) DeleteUserURLS(w http.ResponseWriter, r *http.Request) {
+	userID, err := r.Cookie("user_id")
+	if err != nil || userID.Value == "" {
+		logger.Log.Debug("Cookie not found")
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 
-	res.Write(data)
+	var deleteItems []string
+	if err := json.NewDecoder(r.Body).Decode(&deleteItems); err != nil {
+		logger.Log.Debug("Cannot decode request JSON", zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	delete := make([]model.URLToDelete, 0, len(deleteItems))
+	for _, item := range deleteItems {
+		delete = append(delete, model.URLToDelete{
+			ShortLink: item,
+			UserID:    userID.Value,
+		})
+	}
+
+	s.service.ScheduleURLDeletion(r.Context(), delete)
+
+	logger.Log.Debug("Urls deleted")
+	w.WriteHeader(http.StatusAccepted)
 }

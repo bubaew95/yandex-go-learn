@@ -11,8 +11,8 @@ import (
 	"testing"
 
 	"github.com/bubaew95/yandex-go-learn/config"
-	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository"
-	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/mock"
+	fileStorage "github.com/bubaew95/yandex-go-learn/internal/adapters/repository/filestorage"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/postgres/mock"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/storage"
 	"github.com/bubaew95/yandex-go-learn/internal/core/model"
 	"github.com/bubaew95/yandex-go-learn/internal/core/service"
@@ -63,7 +63,7 @@ func TestHandlerCreate(t *testing.T) {
 	cfg := config.NewConfig()
 
 	shortenerDB, _ := storage.NewShortenerDB(*cfg)
-	shortenerRepository, err := repository.NewShortenerRepository(*shortenerDB)
+	shortenerRepository, err := fileStorage.NewShortenerRepository(*shortenerDB)
 	require.NoError(t, err)
 
 	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
@@ -153,7 +153,7 @@ func TestHandlerGet(t *testing.T) {
 		OriginalURL: "https://practicum.yandex.ru/learn",
 	})
 
-	shortenerRepository, err := repository.NewShortenerRepository(*shortenerDB)
+	shortenerRepository, err := fileStorage.NewShortenerRepository(*shortenerDB)
 	require.NoError(t, err)
 
 	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
@@ -212,7 +212,7 @@ func TestHandlerAddNewURLFromJson(t *testing.T) {
 	shortenerDB, _ := storage.NewShortenerDB(*cfg)
 	defer os.Remove(cfg.FilePath)
 
-	shortenerRepository, err := repository.NewShortenerRepository(*shortenerDB)
+	shortenerRepository, err := fileStorage.NewShortenerRepository(*shortenerDB)
 	require.NoError(t, err)
 
 	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
@@ -286,7 +286,7 @@ func TestHandlerBatch(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	shortenerRepository := mock.NewMockShortenerRepositoryInterface(ctrl)
+	shortenerRepository := mock.NewMockShortenerRepository(ctrl)
 	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
 	shortenerHandler := NewShortenerHandler(shortenerService)
 
