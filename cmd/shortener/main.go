@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	chi_middleware "github.com/go-chi/chi/v5/middleware"
 	"net/http"
 	"sync"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/bubaew95/yandex-go-learn/internal/core/service"
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
+	_ "net/http/pprof"
 )
 
 type closer interface {
@@ -51,7 +53,7 @@ func runApp() error {
 	shortenerHandler := handlers.NewShortenerHandler(shortenerService)
 	route := setupRouter(shortenerHandler)
 
-	logger.Log.Info("Running server", zap.String("port", cfg.Port))
+	logger.Log.Info("Running server", zap.String("ports", cfg.Port))
 	if err := http.ListenAndServe(cfg.Port, route); err != nil {
 		return fmt.Errorf("server startup error: %w", err)
 	}
@@ -99,6 +101,8 @@ func setupRouter(shortenerHandler *handlers.ShortenerHandler) *chi.Mux {
 		r.Get("/urls", shortenerHandler.GetUserURLS)
 		r.Delete("/urls", shortenerHandler.DeleteUserURLS)
 	})
+
+	route.Mount("/debug", chi_middleware.Profiler())
 
 	return route
 }
