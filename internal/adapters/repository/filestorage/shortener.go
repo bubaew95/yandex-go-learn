@@ -79,31 +79,12 @@ func (s ShortenerRepository) Ping(ctx context.Context) error {
 
 func (s ShortenerRepository) InsertURLs(ctx context.Context, urls []model.ShortenerURLMapping) error {
 	for _, v := range urls {
-		_, err := s.GetURLByID(ctx, v.CorrelationID)
-		if err == nil {
-			continue
-		}
-
-		err = s.SetURL(ctx, v.CorrelationID, v.OriginalURL)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (s ShortenerRepository) InsertURLTwo(ctx context.Context, urls []model.ShortenerURLMapping) error {
-	for _, v := range urls {
 		_, ok := s.cache[v.CorrelationID]
 		if !ok {
 			continue
 		}
 
-		err := s.SetURL(ctx, v.CorrelationID, v.OriginalURL)
-		if err != nil {
-			return err
-		}
+		s.SetURL(ctx, v.CorrelationID, v.OriginalURL)
 	}
 
 	return nil
