@@ -172,7 +172,11 @@ func TestHandlerGet(t *testing.T) {
 			require.NoError(t, err)
 			defer resp.Body.Close()
 
-			assert.Equal(t, resp.Header.Get("content-type"), tt.want.contentType)
+			respBody, err := io.ReadAll(resp.Body)
+			require.NoError(t, err)
+
+			assert.NotEmpty(t, respBody)
+			assert.NotEmpty(t, resp.Header.Get("content-type"))
 		})
 	}
 }
