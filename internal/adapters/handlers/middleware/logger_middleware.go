@@ -4,8 +4,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/bubaew95/yandex-go-learn/internal/adapters/logger"
 	"go.uber.org/zap"
+
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/logger"
 )
 
 type (

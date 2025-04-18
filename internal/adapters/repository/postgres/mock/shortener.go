@@ -8,8 +8,9 @@ import (
 	context "context"
 	reflect "reflect"
 
-	model "github.com/bubaew95/yandex-go-learn/internal/core/model"
 	gomock "github.com/golang/mock/gomock"
+
+	model "github.com/bubaew95/yandex-go-learn/internal/core/model"
 )
 
 // MockShortenerRepository is a mock of ShortenerRepository interface.

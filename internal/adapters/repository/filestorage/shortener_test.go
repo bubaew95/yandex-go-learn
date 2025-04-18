@@ -2,11 +2,12 @@ package filestorage
 
 import (
 	"context"
+	"os"
+	"testing"
+
 	"github.com/bubaew95/yandex-go-learn/config"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/storage"
 	"github.com/bubaew95/yandex-go-learn/internal/core/model"
-	"os"
-	"testing"
 )
 
 func BenchmarkShortenerRepository_InsertURLs(b *testing.B) {

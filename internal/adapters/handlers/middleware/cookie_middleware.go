@@ -4,9 +4,10 @@ import (
 	"context"
 	"net/http"
 
+	"go.uber.org/zap"
+
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/logger"
 	"github.com/bubaew95/yandex-go-learn/pkg/crypto"
-	"go.uber.org/zap"
 )
 
 func CookieMiddleware(h http.Handler) http.Handler {

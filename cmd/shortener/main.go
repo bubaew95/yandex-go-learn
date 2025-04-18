@@ -3,9 +3,15 @@ package main
 import (
 	"context"
 	"fmt"
-	chi_middleware "github.com/go-chi/chi/v5/middleware"
 	"net/http"
 	"sync"
+
+	chi_middleware "github.com/go-chi/chi/v5/middleware"
+
+	_ "net/http/pprof"
+
+	"github.com/go-chi/chi/v5"
+	"go.uber.org/zap"
 
 	"github.com/bubaew95/yandex-go-learn/config"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/handlers"
@@ -16,9 +22,6 @@ import (
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/storage"
 	"github.com/bubaew95/yandex-go-learn/internal/core/ports"
 	"github.com/bubaew95/yandex-go-learn/internal/core/service"
-	"github.com/go-chi/chi/v5"
-	"go.uber.org/zap"
-	_ "net/http/pprof"
 )
 
 type closer interface {

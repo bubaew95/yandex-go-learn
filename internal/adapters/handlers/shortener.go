@@ -8,12 +8,13 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/go-chi/chi/v5"
+	"go.uber.org/zap"
+
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/constants"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/logger"
 	"github.com/bubaew95/yandex-go-learn/internal/core/model"
 	"github.com/bubaew95/yandex-go-learn/internal/core/ports"
-	"github.com/go-chi/chi/v5"
-	"go.uber.org/zap"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
