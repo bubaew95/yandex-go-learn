@@ -117,7 +117,7 @@ func TestHandlerGet(t *testing.T) {
 			name: "Simple test",
 			url:  "/WzYAhS",
 			want: want{
-				contentType: "text/html",
+				contentType: "text/html; charset=utf-8",
 				statusCode:  http.StatusTemporaryRedirect,
 				location:    "https://practicum.yandex.ru/",
 			},
@@ -126,7 +126,7 @@ func TestHandlerGet(t *testing.T) {
 			name: "Bad request test",
 			url:  "/WzYAhSs",
 			want: want{
-				contentType: "text/html",
+				contentType: "text/html; charset=utf-8",
 				statusCode:  http.StatusBadRequest,
 				location:    "https://practicum.yandex.ru/learn",
 			},
