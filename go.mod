@@ -1,6 +1,6 @@
 module github.com/bubaew95/yandex-go-learn
 
-go 1.23.7
+go 1.22.12
 
 require (
 	github.com/go-chi/chi/v5 v5.2.1
