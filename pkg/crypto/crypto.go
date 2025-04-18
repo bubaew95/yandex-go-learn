@@ -84,8 +84,8 @@ func EncodeUserIDRSA(userID string) (string, error) {
 	return base64.StdEncoding.EncodeToString(ciphertext), nil
 }
 
-func DecodeUserIDRSA(userId string) (string, error) {
-	ciphertext, err := base64.StdEncoding.DecodeString(userId)
+func DecodeUserIDRSA(userID string) (string, error) {
+	ciphertext, err := base64.StdEncoding.DecodeString(userID)
 	if err != nil {
 		return "", err
 	}
