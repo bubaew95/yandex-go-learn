@@ -3,7 +3,10 @@ package crypto
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/rand"
+	"crypto/rsa"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"net/http"
@@ -61,6 +64,41 @@ func aesGcm() (cipher.AEAD, []byte, error) {
 
 	nonce := key[len(key)-aesgcm.NonceSize():]
 	return aesgcm, nonce, nil
+}
+
+var (
+	rsaPrivateKey, _ = rsa.GenerateKey(rand.Reader, 2048)
+	rsaPublicKey     = &rsaPrivateKey.PublicKey
+)
+
+// New algorithms
+func EncodeUserIDRSA(userID string) (string, error) {
+	label := []byte("") // Optional label
+	hash := sha256.New()
+
+	ciphertext, err := rsa.EncryptOAEP(hash, rand.Reader, rsaPublicKey, []byte(userID), label)
+	if err != nil {
+		return "", err
+	}
+
+	return base64.StdEncoding.EncodeToString(ciphertext), nil
+}
+
+func DecodeUserIDRSA(userId string) (string, error) {
+	ciphertext, err := base64.StdEncoding.DecodeString(userId)
+	if err != nil {
+		return "", err
+	}
+
+	label := []byte("")
+	hash := sha256.New()
+
+	plaintext, err := rsa.DecryptOAEP(hash, rand.Reader, rsaPrivateKey, ciphertext, label)
+	if err != nil {
+		return "", err
+	}
+
+	return string(plaintext), nil
 }
 
 func ValidateUserID(cookie *http.Cookie) bool {
