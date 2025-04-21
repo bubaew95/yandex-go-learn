@@ -10,6 +10,7 @@ import (
 	"github.com/bubaew95/yandex-go-learn/pkg/crypto"
 )
 
+// CookieMiddleware — middleware, обеспечивающий наличие user_id в куках пользователя.
 func CookieMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var (

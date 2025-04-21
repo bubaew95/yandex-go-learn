@@ -325,3 +325,7 @@ func TestHandlerBatch(t *testing.T) {
 		})
 	}
 }
+
+func ExampleAddNewURL() {
+
+}

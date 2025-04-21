@@ -7,6 +7,7 @@ import (
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/compress"
 )
 
+// GZipMiddleware - middleware, производит сжатие запроса.
 func GZipMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ow := w

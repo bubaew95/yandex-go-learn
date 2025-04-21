@@ -21,10 +21,12 @@ import (
 
 const randomStringLength = 8
 
+// ShortenerHandler обрабатывает HTTP-запросы, связанные с сокращением URL.
 type ShortenerHandler struct {
 	service ports.ShortenerService
 }
 
+// NewShortenerHandler возвращает новый экземпляр ShortenerHandler.
 func NewShortenerHandler(s ports.ShortenerService) *ShortenerHandler {
 	return &ShortenerHandler{
 		service: s,
@@ -48,6 +50,11 @@ func writeByteResponse(res http.ResponseWriter, statusCode int, data []byte) {
 	res.Write(data)
 }
 
+// CreateURL обрабатывает HTTP POST-запрос на создание короткой ссылки.
+//
+// Ожидает оригинальный URL в теле запроса (как текст).
+// Возвращает укороченную ссылку в случае успеха.
+// Если такая ссылка уже есть — возвращает HTTP 409 и ранее созданную короткую ссылку.
 func (s ShortenerHandler) CreateURL(res http.ResponseWriter, req *http.Request) {
 	responseData, err := io.ReadAll(req.Body)
 	if err != nil {
@@ -83,6 +90,12 @@ func (s ShortenerHandler) CreateURL(res http.ResponseWriter, req *http.Request) 
 	writeByteResponse(res, http.StatusCreated, []byte(url))
 }
 
+// GetURL обрабатывает GET-запрос для получения оригинального URL по его короткому идентификатору.
+//
+// Ожидает параметр id, по которому извлекается оригинальная ссылка.
+// Если ссылка найдена возврашает HTTP 307 статус и перенаправляет на оригинальную ссылку.
+// Если ссылка удалена возврашает HTTP 410 статус.
+// Если ссылка не найдена - возврашает HTTP 404 статус.
 func (s ShortenerHandler) GetURL(res http.ResponseWriter, req *http.Request) {
 	id := chi.URLParam(req, "id")
 
@@ -103,6 +116,13 @@ func (s ShortenerHandler) GetURL(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusTemporaryRedirect)
 }
 
+// AddNewURL обрабатывает HTTP POST-запрос на создание короткой ссылки.
+//
+// Ожидает JSON данные в теое запроса.
+// Возврашает HTTP 201 статус и JSON тело ответа.
+// Если JSON тело запроса имеет ошибку - вовзврашается HTTP 500 ошибка.
+// Если при генерации короткой ссылки возникла ошибка - возврается HTTP 500 ошибка.
+// Если такая ссылка уже добавлена в базу - возврашается оригинальная ссылка из базы.
 func (s ShortenerHandler) AddNewURL(res http.ResponseWriter, req *http.Request) {
 	var requestBody model.ShortenerRequest
 
@@ -138,6 +158,10 @@ func (s ShortenerHandler) AddNewURL(res http.ResponseWriter, req *http.Request) 
 	writeJSONResponse(res, http.StatusCreated, responseModel)
 }
 
+// Ping - обрабатывает HTTP GET-запрос на проверку подключения к БД.
+//
+// Если подключение успешное - возврашает HTTP 200 статус.
+// Если при подключении возникла ошибка - возврашает HTTP 500 статус.
 func (s ShortenerHandler) Ping(w http.ResponseWriter, r *http.Request) {
 	if err := s.service.Ping(r.Context()); err != nil {
 		fmt.Println(err)
@@ -148,6 +172,12 @@ func (s ShortenerHandler) Ping(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// Batch - обрабатывает HTTP POST-запрос на создание которих ссылок.
+//
+// Ожидает JSON массив с которотким ID и с оригинальной ссылкой.
+// Если добавление ссылок прошла успешно - возврашает HTTP 201 статус и все добавленыее ссылки.
+// Если в JSON есть ошибка - возврашает HTTP 500 ошибку.
+// Если при добавлении возникла ошибка - возврашает HTTP 500 статус.
 func (s ShortenerHandler) Batch(w http.ResponseWriter, r *http.Request) {
 	var batchURLMapping []model.ShortenerURLMapping
 
@@ -168,6 +198,11 @@ func (s ShortenerHandler) Batch(w http.ResponseWriter, r *http.Request) {
 	writeJSONResponse(w, http.StatusCreated, items)
 }
 
+// GetUserURLS - обрабатывает HTTP GET-запрос на получение ссылок авторизованного пользователя.
+//
+// Если есть ссылки - возврашает HTTP 200 статус и все ссылки.
+// Если ссылок нет - возврашает HTTP 204 статус.
+// Если в запросе возникла ошибка возврашает HTTP 500 ошибку.
 func (s ShortenerHandler) GetUserURLS(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("user_id")
 	if err != nil {
@@ -192,6 +227,7 @@ func (s ShortenerHandler) GetUserURLS(w http.ResponseWriter, r *http.Request) {
 	writeJSONResponse(w, http.StatusOK, items)
 }
 
+// DeleteUserURLS - обрабатывает HTTP DELETE-запрос на удаление ссылок из базы.
 func (s ShortenerHandler) DeleteUserURLS(w http.ResponseWriter, r *http.Request) {
 	userID, err := r.Cookie("user_id")
 	if err != nil || userID.Value == "" {
