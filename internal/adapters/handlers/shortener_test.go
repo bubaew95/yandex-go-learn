@@ -328,7 +328,7 @@ func TestHandlerBatch(t *testing.T) {
 	}
 }
 
-func ExampleAddNewURL() {
+func ExampleShortenerHandler_AddNewURL() {
 	ctrl := gomock.NewController(nil)
 	defer ctrl.Finish()
 
