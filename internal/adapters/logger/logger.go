@@ -5,8 +5,10 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+// Log - логгер.
 var Log *zap.Logger = zap.NewNop()
 
+// Initialize инициализация логгера.
 func Initialize() error {
 	cfg := zap.NewProductionConfig()
 

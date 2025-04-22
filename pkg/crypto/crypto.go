@@ -1,3 +1,5 @@
+// Package crypto предоставляет утилиты для генерации, кодирования и декодирования идентификаторов пользователей.
+// Поддерживаются симметричное (AES) и асимметричное (RSA) шифрование.
 package crypto
 
 import (
@@ -15,12 +17,15 @@ import (
 
 type ctxKey string
 
+// KeyUserID — ключ, используемый для хранения/извлечения ID пользователя из контекста.
 const KeyUserID ctxKey = "user_id"
 
 var (
 	secretKey = "x35k9f"
 )
 
+// DecodeUserID расшифровывает закодированный идентификатор пользователя, зашифрованный с использованием AES.
+// Возвращает оригинальное строковое значение.
 func DecodeUserID(userID string) (string, error) {
 	aesgcm, nonce, err := aesGcm()
 	if err != nil {
@@ -40,6 +45,7 @@ func DecodeUserID(userID string) (string, error) {
 	return string(decrypted), nil
 }
 
+// EncodeUserID шифрует идентификатор пользователя с использованием AES и возвращает hex-представление.
 func EncodeUserID(userID string) (string, error) {
 	aesgcm, nonce, err := aesGcm()
 	if err != nil {
@@ -71,7 +77,8 @@ var (
 	rsaPublicKey     = &rsaPrivateKey.PublicKey
 )
 
-// New algorithms
+// EncodeUserIDRSA шифрует идентификатор пользователя с помощью RSA-OAEP.
+// Возвращает base64-представление зашифрованных данных.
 func EncodeUserIDRSA(userID string) (string, error) {
 	label := []byte("") // Optional label
 	hash := sha256.New()
@@ -84,6 +91,7 @@ func EncodeUserIDRSA(userID string) (string, error) {
 	return base64.StdEncoding.EncodeToString(ciphertext), nil
 }
 
+// DecodeUserIDRSA расшифровывает идентификатор пользователя, зашифрованный с помощью RSA-OAEP.
 func DecodeUserIDRSA(userID string) (string, error) {
 	ciphertext, err := base64.StdEncoding.DecodeString(userID)
 	if err != nil {
@@ -101,6 +109,8 @@ func DecodeUserIDRSA(userID string) (string, error) {
 	return string(plaintext), nil
 }
 
+// ValidateUserID проверяет соответствие значения cookie и декодированного ID.
+// Возвращает true, если они не совпадают (что может указывать на подделку).
 func ValidateUserID(cookie *http.Cookie) bool {
 	userID := cookie.Value
 	signUserID, _ := DecodeUserID(userID)
@@ -108,6 +118,7 @@ func ValidateUserID(cookie *http.Cookie) bool {
 	return userID != signUserID
 }
 
+// GenerateUserID генерирует уникальный ID пользователя на основе текущего времени.
 func GenerateUserID() string {
 	return fmt.Sprintf("%d", time.Now().UnixNano())
 }
