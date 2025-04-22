@@ -6,13 +6,23 @@ import (
 	"os"
 )
 
+// Config содержит параметры конфигурации приложения.
 type Config struct {
-	Port        string
-	BaseURL     string
-	FilePath    string
+	// Port на котором запускается web сервер
+	Port string
+
+	//BaseURL базовый адрес
+	BaseURL string
+
+	// FilePath путь к файлу
+	FilePath string
+
+	// DataBaseDSN строка подключения к базе данных
 	DataBaseDSN string
 }
 
+// NewConfig создает и возвращает структуру конфигурации Config,
+// комбинируя значения из флагов командной строки и переменных окружения.
 func NewConfig() *Config {
 	port := flag.String("a", ":8080", "отвечает за адрес запуска HTTP-сервера")
 	baseURL := flag.String("b", "", " отвечает за базовый адрес результирующего сокращённого URL")
