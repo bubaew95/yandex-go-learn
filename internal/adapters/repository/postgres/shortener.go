@@ -1,3 +1,4 @@
+// Package postgres реализует хранилище сокращённых URL на основе PostgreSQL.
 package postgres
 
 import (
@@ -6,21 +7,28 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"go.uber.org/zap"
+
 	"github.com/bubaew95/yandex-go-learn/config"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/constants"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/logger"
 	"github.com/bubaew95/yandex-go-learn/internal/core/model"
 	"github.com/bubaew95/yandex-go-learn/pkg/crypto"
-	"github.com/jackc/pgerrcode"
-	"github.com/jackc/pgx/v5/pgconn"
-	_ "github.com/jackc/pgx/v5/stdlib"
-	"go.uber.org/zap"
 )
 
+// ShortenerRepository реализует интерфейс репозитория для работы с сокращёнными URL.
+// Использует PostgreSQL как хранилище данных.
 type ShortenerRepository struct {
 	db *sql.DB
 }
 
+// NewShortenerRepository создаёт и инициализирует новый экземпляр ShortenerRepository,
+// выполняет подключение к БД и создаёт таблицы, если их нет.
+//
+// Возвращает ошибку, если соединение с БД или инициализация схемы завершились неудачно.
 func NewShortenerRepository(ctg config.Config) (*ShortenerRepository, error) {
 	db, err := dbConnect(ctg.DataBaseDSN)
 	if err != nil {
@@ -53,14 +61,18 @@ func createTable(db *sql.DB) error {
 	return err
 }
 
+// Close закрывает соединение с базой данных.
 func (p ShortenerRepository) Close() error {
 	return p.db.Close()
 }
 
+// Ping проверяет доступность подключения к базе данных.
 func (p ShortenerRepository) Ping(ctx context.Context) error {
 	return p.db.PingContext(ctx)
 }
 
+// SetURL сохраняет новый сокращённый URL в базу данных.
+// В случае конфликта уникального ключа возвращает ошибку ErrUniqueIndex.
 func (p ShortenerRepository) SetURL(ctx context.Context, id string, url string) error {
 	userID := ctx.Value(crypto.KeyUserID)
 
@@ -79,6 +91,8 @@ func (p ShortenerRepository) SetURL(ctx context.Context, id string, url string) 
 	return err
 }
 
+// GetURLByID возвращает оригинальный URL по его сокращённому идентификатору.
+// Если запись помечена как удалённая, возвращает ошибку ErrIsDeleted.
 func (p ShortenerRepository) GetURLByID(ctx context.Context, id string) (string, error) {
 	var (
 		url       string
@@ -99,6 +113,8 @@ func (p ShortenerRepository) GetURLByID(ctx context.Context, id string) (string,
 	return url, nil
 }
 
+// GetURLByOriginalURL ищет короткий ID по оригинальному URL.
+// Возвращает false, если совпадение не найдено.
 func (p ShortenerRepository) GetURLByOriginalURL(ctx context.Context, originalURL string) (string, bool) {
 	var (
 		id  string
@@ -115,6 +131,7 @@ func (p ShortenerRepository) GetURLByOriginalURL(ctx context.Context, originalUR
 	return id, true
 }
 
+// InsertURLs добавляет список URL в БД, пропуская уже существующие записи (ON CONFLICT DO NOTHING).
 func (p ShortenerRepository) InsertURLs(ctx context.Context, urls []model.ShortenerURLMapping) error {
 	tx, err := p.db.Begin()
 	if err != nil {
@@ -140,6 +157,8 @@ func (p ShortenerRepository) InsertURLs(ctx context.Context, urls []model.Shorte
 
 	return tx.Commit()
 }
+
+// GetURLSByUserID возвращает все сокращённые ссылки, созданные пользователем.
 func (p ShortenerRepository) GetURLSByUserID(ctx context.Context, userID string) (map[string]string, error) {
 	rows, err := p.db.QueryContext(ctx, "SELECT id, url FROM shortener WHERE user_id = $1", userID)
 	if err != nil {
@@ -168,6 +187,7 @@ func (p ShortenerRepository) GetURLSByUserID(ctx context.Context, userID string)
 	return items, nil
 }
 
+// DeleteUserURLS помечает указанные пользователем URL как удалённые (is_deleted = true).
 func (p ShortenerRepository) DeleteUserURLS(ctx context.Context, items []model.URLToDelete) error {
 	tx, err := p.db.Begin()
 	if err != nil {

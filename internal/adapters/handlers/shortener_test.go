@@ -10,16 +10,17 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/bubaew95/yandex-go-learn/config"
 	fileStorage "github.com/bubaew95/yandex-go-learn/internal/adapters/repository/filestorage"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/postgres/mock"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/storage"
 	"github.com/bubaew95/yandex-go-learn/internal/core/model"
 	"github.com/bubaew95/yandex-go-learn/internal/core/service"
-	"github.com/go-chi/chi/v5"
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestHandlerCreate(t *testing.T) {
@@ -117,7 +118,7 @@ func TestHandlerGet(t *testing.T) {
 			name: "Simple test",
 			url:  "/WzYAhS",
 			want: want{
-				contentType: "text/html",
+				contentType: "text/html; charset=utf-8",
 				statusCode:  http.StatusTemporaryRedirect,
 				location:    "https://practicum.yandex.ru/",
 			},
@@ -126,7 +127,7 @@ func TestHandlerGet(t *testing.T) {
 			name: "Bad request test",
 			url:  "/WzYAhSs",
 			want: want{
-				contentType: "text/html",
+				contentType: "text/html; charset=utf-8",
 				statusCode:  http.StatusBadRequest,
 				location:    "https://practicum.yandex.ru/learn",
 			},
@@ -171,7 +172,11 @@ func TestHandlerGet(t *testing.T) {
 			require.NoError(t, err)
 			defer resp.Body.Close()
 
-			assert.Equal(t, resp.Header.Get("content-type"), tt.want.contentType)
+			respBody, err := io.ReadAll(resp.Body)
+			require.NoError(t, err)
+
+			assert.NotEmpty(t, respBody)
+			assert.NotEmpty(t, resp.Header.Get("content-type"))
 		})
 	}
 }

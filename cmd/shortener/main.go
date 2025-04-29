@@ -6,6 +6,13 @@ import (
 	"net/http"
 	"sync"
 
+	chi_middleware "github.com/go-chi/chi/v5/middleware"
+
+	_ "net/http/pprof"
+
+	"github.com/go-chi/chi/v5"
+	"go.uber.org/zap"
+
 	"github.com/bubaew95/yandex-go-learn/config"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/handlers"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/handlers/middleware"
@@ -15,8 +22,6 @@ import (
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/storage"
 	"github.com/bubaew95/yandex-go-learn/internal/core/ports"
 	"github.com/bubaew95/yandex-go-learn/internal/core/service"
-	"github.com/go-chi/chi/v5"
-	"go.uber.org/zap"
 )
 
 type closer interface {
@@ -51,7 +56,7 @@ func runApp() error {
 	shortenerHandler := handlers.NewShortenerHandler(shortenerService)
 	route := setupRouter(shortenerHandler)
 
-	logger.Log.Info("Running server", zap.String("port", cfg.Port))
+	logger.Log.Info("Running server", zap.String("ports", cfg.Port))
 	if err := http.ListenAndServe(cfg.Port, route); err != nil {
 		return fmt.Errorf("server startup error: %w", err)
 	}
@@ -99,6 +104,8 @@ func setupRouter(shortenerHandler *handlers.ShortenerHandler) *chi.Mux {
 		r.Get("/urls", shortenerHandler.GetUserURLS)
 		r.Delete("/urls", shortenerHandler.DeleteUserURLS)
 	})
+
+	route.Mount("/debug", chi_middleware.Profiler())
 
 	return route
 }

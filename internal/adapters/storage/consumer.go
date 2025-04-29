@@ -1,3 +1,4 @@
+// Package storage предоставляет функции для работы с файловым хранилищем сокращённых ссылок.
 package storage
 
 import (
@@ -9,6 +10,14 @@ import (
 	"github.com/bubaew95/yandex-go-learn/internal/core/model"
 )
 
+// ReadShorteners читает файл с сериализованными записями сокращённых ссылок.
+//
+// Файл должен содержать строки в формате JSON, каждая строка — это структура model.ShortenURL.
+// Каждая строка разбирается, и на её основе формируется карта соответствий: ключ — ShortURL, значение — OriginalURL.
+//
+// Если файл не существует, он будет создан с пустым содержимым.
+//
+// Возвращает карту сокращённых ссылок и ошибку, если операция чтения или десериализации завершилась неудачно.
 func ReadShorteners(filename string) (map[string]string, error) {
 	file, err := os.OpenFile(filename, os.O_RDONLY|os.O_CREATE, 0666)
 	if err != nil {

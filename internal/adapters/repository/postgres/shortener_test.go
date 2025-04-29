@@ -5,11 +5,12 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/postgres/mock"
-	"github.com/bubaew95/yandex-go-learn/internal/core/model"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/postgres/mock"
+	"github.com/bubaew95/yandex-go-learn/internal/core/model"
 )
 
 func TestGetURLByID(t *testing.T) {

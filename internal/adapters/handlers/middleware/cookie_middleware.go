@@ -4,11 +4,13 @@ import (
 	"context"
 	"net/http"
 
+	"go.uber.org/zap"
+
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/logger"
 	"github.com/bubaew95/yandex-go-learn/pkg/crypto"
-	"go.uber.org/zap"
 )
 
+// CookieMiddleware — middleware, обеспечивающий наличие user_id в куках пользователя.
 func CookieMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var (
@@ -17,7 +19,7 @@ func CookieMiddleware(h http.Handler) http.Handler {
 		)
 
 		cookieUserID, err := r.Cookie("user_id")
-		if err != nil || cookieUserID.Value == "" || !crypto.ValidateUserID(cookieUserID) {
+		if err != nil || cookieUserID.Value == "" || !crypto.IsInvalidUserID(cookieUserID) {
 			userID = crypto.GenerateUserID()
 			cookieValue, err = crypto.EncodeUserID(userID)
 			if err != nil {

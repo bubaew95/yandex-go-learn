@@ -1,3 +1,5 @@
+// Package service содержит реализацию бизнес-логики сервиса сокращения ссылок,
+// включая генерацию уникальных ID, хранение, получение и удаление URL.
 package service
 
 import (
@@ -14,6 +16,8 @@ import (
 	"github.com/bubaew95/yandex-go-learn/internal/core/ports"
 )
 
+// ShortenerService реализует бизнес-логику для сокращения URL.
+// Поддерживает генерацию уникальных ссылок, сохранение, извлечение и отложенное удаление.
 type ShortenerService struct {
 	repository ports.ShortenerRepository
 	config     config.Config
@@ -21,6 +25,8 @@ type ShortenerService struct {
 	deleteChan chan model.URLToDelete
 }
 
+// NewShortenerService создаёт и инициализирует новый экземпляр ShortenerService.
+// Принимает хранилище и конфигурацию приложения.
 func NewShortenerService(r ports.ShortenerRepository, cfg config.Config) *ShortenerService {
 	return &ShortenerService{
 		repository: r,
@@ -30,6 +36,8 @@ func NewShortenerService(r ports.ShortenerRepository, cfg config.Config) *Shorte
 	}
 }
 
+// GenerateURL генерирует уникальный идентификатор для заданного URL и сохраняет его.
+// Повторяет генерацию, пока не будет найден уникальный ID.
 func (s ShortenerService) GenerateURL(ctx context.Context, url string, randomStringLength int) (string, error) {
 	s.mx.Lock()
 	defer s.mx.Unlock()
@@ -52,6 +60,7 @@ func (s ShortenerService) GenerateURL(ctx context.Context, url string, randomStr
 	return s.generateResponseURL(genID), nil
 }
 
+// RandStringBytes генерирует случайную строку заданной длины из латинских букв.
 func (s ShortenerService) RandStringBytes(n int) string {
 
 	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -64,10 +73,12 @@ func (s ShortenerService) RandStringBytes(n int) string {
 	return string(b)
 }
 
+// GetURLByID возвращает оригинальный URL по короткому ID.
 func (s ShortenerService) GetURLByID(ctx context.Context, id string) (string, error) {
 	return s.repository.GetURLByID(ctx, id)
 }
 
+// GetURLByOriginalURL возвращает короткий URL по оригинальному, если он уже существует.
 func (s ShortenerService) GetURLByOriginalURL(ctx context.Context, originalURL string) (string, bool) {
 	id, ok := s.repository.GetURLByOriginalURL(ctx, originalURL)
 
@@ -78,6 +89,7 @@ func (s ShortenerService) GetURLByOriginalURL(ctx context.Context, originalURL s
 	return id, ok
 }
 
+// Ping - проверка подключения в БД
 func (s ShortenerService) Ping(ctx context.Context) error {
 	return s.repository.Ping(ctx)
 }
@@ -86,6 +98,7 @@ func (s ShortenerService) generateResponseURL(id string) string {
 	return fmt.Sprintf("%s/%s", s.config.BaseURL, id)
 }
 
+// InsertURLs сохраняет пакет сокращённых ссылок и возвращает сгенерированные короткие ссылки.
 func (s ShortenerService) InsertURLs(ctx context.Context, urls []model.ShortenerURLMapping) ([]model.ShortenerURLResponse, error) {
 	var items []model.ShortenerURLMapping
 	for _, v := range urls {
@@ -116,6 +129,7 @@ func isEmpty(t string) bool {
 	return strings.TrimSpace(t) == ""
 }
 
+// GetURLSByUserID возвращает список сокращённых ссылок, созданных конкретным пользователем.
 func (s ShortenerService) GetURLSByUserID(ctx context.Context, userID string) ([]model.ShortenerURLSForUserResponse, error) {
 	items, err := s.repository.GetURLSByUserID(ctx, userID)
 	if err != nil {
@@ -133,6 +147,7 @@ func (s ShortenerService) GetURLSByUserID(ctx context.Context, userID string) ([
 	return responseURLs, err
 }
 
+// DeleteUserURLS удаляет (помечает как удалённые) список ссылок, привязанных к пользователю.
 func (s ShortenerService) DeleteUserURLS(ctx context.Context, items []model.URLToDelete) error {
 	if len(items) == 0 {
 		return nil
@@ -141,6 +156,7 @@ func (s ShortenerService) DeleteUserURLS(ctx context.Context, items []model.URLT
 	return s.repository.DeleteUserURLS(ctx, items)
 }
 
+// ScheduleURLDeletion планирует отложенное удаление ссылок через канал.
 func (s ShortenerService) ScheduleURLDeletion(ctx context.Context, items []model.URLToDelete) {
 	go func() {
 		for _, item := range items {
@@ -149,6 +165,7 @@ func (s ShortenerService) ScheduleURLDeletion(ctx context.Context, items []model
 	}()
 }
 
+// Run запускает фоновый процесс для пакетного удаления ссылок по таймеру или по лимиту.
 func (s ShortenerService) Run(ctx context.Context, wg *sync.WaitGroup) {
 	limit := 100
 	batch := make([]model.URLToDelete, 0, limit)
