@@ -21,20 +21,20 @@ type (
 	}
 )
 
-// Write writes the data to the connection as part of an HTTP reply.
+// Write записывает данные в соединение как часть HTTP-ответа.
 func (r *loggingResponseWriter) Write(b []byte) (int, error) {
 	size, err := r.ResponseWriter.Write(b)
 	r.responseData.size += size
 	return size, err
 }
 
-// WriteHeader sends an HTTP response header with the provided.
+// WriteHeader отправляет заголовок HTTP-ответа с предоставленными данными.
 func (r *loggingResponseWriter) WriteHeader(statusCode int) {
 	r.ResponseWriter.WriteHeader(statusCode)
 	r.responseData.status = statusCode
 }
 
-// LoggerMiddleware - middleware, логгер.
+// LoggerMiddleware - логгер.
 func LoggerMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 

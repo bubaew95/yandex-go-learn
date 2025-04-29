@@ -109,9 +109,9 @@ func DecodeUserIDRSA(userID string) (string, error) {
 	return string(plaintext), nil
 }
 
-// ValidateUserID проверяет соответствие значения cookie и декодированного ID.
+// IsInvalidUserID проверяет соответствие значения cookie и декодированного ID.
 // Возвращает true, если они не совпадают (что может указывать на подделку).
-func ValidateUserID(cookie *http.Cookie) bool {
+func IsInvalidUserID(cookie *http.Cookie) bool {
 	userID := cookie.Value
 	signUserID, _ := DecodeUserID(userID)
 

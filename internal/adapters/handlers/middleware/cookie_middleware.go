@@ -19,7 +19,7 @@ func CookieMiddleware(h http.Handler) http.Handler {
 		)
 
 		cookieUserID, err := r.Cookie("user_id")
-		if err != nil || cookieUserID.Value == "" || !crypto.ValidateUserID(cookieUserID) {
+		if err != nil || cookieUserID.Value == "" || !crypto.IsInvalidUserID(cookieUserID) {
 			userID = crypto.GenerateUserID()
 			cookieValue, err = crypto.EncodeUserID(userID)
 			if err != nil {
