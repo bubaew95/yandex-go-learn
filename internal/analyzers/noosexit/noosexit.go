@@ -1,3 +1,5 @@
+// Пакет noosexit реализует анализатор, запрещающий прямой вызов os.Exit
+// в функции main пакета main.
 package noosexit
 
 import (
@@ -5,6 +7,8 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
+// NewAnalyzer возвращает анализатор, который находит вызовы os.Exit
+// в функции main главного пакета.
 func NewAnalyzer() *analysis.Analyzer {
 	return &analysis.Analyzer{
 		Name: "noosexit",
