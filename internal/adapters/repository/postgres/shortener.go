@@ -172,7 +172,7 @@ func (p ShortenerRepository) GetURLSByUserID(ctx context.Context, userID string)
 			ID  string
 			URL string
 		)
-		err := rows.Scan(&ID, &URL)
+		err = rows.Scan(&ID, &URL)
 		if err != nil {
 			return nil, err
 		}
