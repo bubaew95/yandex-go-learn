@@ -13,13 +13,42 @@ import (
 	"github.com/bubaew95/yandex-go-learn/config"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/logger"
 	"github.com/bubaew95/yandex-go-learn/internal/core/model"
-	"github.com/bubaew95/yandex-go-learn/internal/core/ports"
 )
+
+// ShortenerRepository определяет контракт для репозитория сокращённых URL.
+// Этот интерфейс реализуется различными адаптерами хранилищ (например, файловая система, PostgreSQL).
+//
+//go:generate go run github.com/vektra/mockery/v2@v2.52.2 --name=ShortenerRepository --filename=repositoryemock_test.go --inpackage
+type ShortenerRepository interface {
+	// GetURLByID возвращает оригинальный URL по его сокращённому идентификатору.
+	GetURLByID(ctx context.Context, id string) (string, error)
+
+	// GetURLByOriginalURL ищет короткий ID по оригинальному URL.
+	GetURLByOriginalURL(ctx context.Context, originalURL string) (string, bool)
+
+	// SetURL сохраняет соответствие между коротким ID и оригинальным URL.
+	SetURL(ctx context.Context, id string, url string) error
+
+	// InsertURLs добавляет список сокращённых URL (например, при массовом импорте).
+	InsertURLs(ctx context.Context, urls []model.ShortenerURLMapping) error
+
+	// GetURLSByUserID возвращает карту всех сокращённых ссылок, привязанных к пользователю.
+	GetURLSByUserID(ctx context.Context, userID string) (map[string]string, error)
+
+	// DeleteUserURLS помечает ссылки как удалённые по запросу пользователя.
+	DeleteUserURLS(ctx context.Context, items []model.URLToDelete) error
+
+	// Ping проверяет доступность репозитория.
+	Ping(ctx context.Context) error
+
+	// Close освобождает ресурсы (например, соединения с БД).
+	Close() error
+}
 
 // ShortenerService реализует бизнес-логику для сокращения URL.
 // Поддерживает генерацию уникальных ссылок, сохранение, извлечение и отложенное удаление.
 type ShortenerService struct {
-	repository ports.ShortenerRepository
+	repository ShortenerRepository
 	config     config.Config
 	mx         *sync.Mutex
 	deleteChan chan model.URLToDelete
@@ -27,7 +56,7 @@ type ShortenerService struct {
 
 // NewShortenerService создаёт и инициализирует новый экземпляр ShortenerService.
 // Принимает хранилище и конфигурацию приложения.
-func NewShortenerService(r ports.ShortenerRepository, cfg config.Config) *ShortenerService {
+func NewShortenerService(r ShortenerRepository, cfg config.Config) *ShortenerService {
 	return &ShortenerService{
 		repository: r,
 		config:     cfg,

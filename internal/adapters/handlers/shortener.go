@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,20 +15,51 @@ import (
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/constants"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/logger"
 	"github.com/bubaew95/yandex-go-learn/internal/core/model"
-	"github.com/bubaew95/yandex-go-learn/internal/core/ports"
-
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 const randomStringLength = 8
 
+// ShortenerService определяет бизнес-логику сервиса сокращения ссылок.
+// Включает в себя генерацию ссылок, работу с пользователями и отложенное удаление.
+//
+//go:generate go run github.com/vektra/mockery/v2@v2.52.2 --name=ShortenerService --filename=servicemock_test.go --inpackage
+type ShortenerService interface {
+	// GenerateURL генерирует короткий URL на основе оригинального.
+	GenerateURL(ctx context.Context, url string, randomStringLength int) (string, error)
+
+	// GetURLByID возвращает оригинальный URL по его сокращённому ID.
+	GetURLByID(ctx context.Context, id string) (string, error)
+
+	// GetURLByOriginalURL возвращает ID, соответствующий оригинальному URL.
+	GetURLByOriginalURL(ctx context.Context, originalURL string) (string, bool)
+
+	// InsertURLs добавляет множество URL и возвращает их короткие представления.
+	InsertURLs(ctx context.Context, urls []model.ShortenerURLMapping) ([]model.ShortenerURLResponse, error)
+
+	// GetURLSByUserID возвращает список сокращённых URL, принадлежащих пользователю.
+	GetURLSByUserID(ctx context.Context, userID string) ([]model.ShortenerURLSForUserResponse, error)
+
+	// DeleteUserURLS помечает ссылки как удалённые.
+	DeleteUserURLS(ctx context.Context, items []model.URLToDelete) error
+
+	// ScheduleURLDeletion планирует асинхронное удаление ссылок (например, через очередь).
+	ScheduleURLDeletion(ctx context.Context, items []model.URLToDelete)
+
+	// RandStringBytes генерирует случайную строку заданной длины (обычно для ID короткой ссылки).
+	RandStringBytes(n int) string
+
+	// Ping проверяет доступность сервиса (например, для liveness-проб).
+	Ping(ctx context.Context) error
+}
+
 // ShortenerHandler обрабатывает HTTP-запросы, связанные с сокращением URL.
 type ShortenerHandler struct {
-	service ports.ShortenerService
+	service ShortenerService
 }
 
 // NewShortenerHandler возвращает новый экземпляр ShortenerHandler.
-func NewShortenerHandler(s ports.ShortenerService) *ShortenerHandler {
+func NewShortenerHandler(s ShortenerService) *ShortenerHandler {
 	return &ShortenerHandler{
 		service: s,
 	}

@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/stretchr/testify/mock"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -11,13 +12,11 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/bubaew95/yandex-go-learn/config"
 	fileStorage "github.com/bubaew95/yandex-go-learn/internal/adapters/repository/filestorage"
-	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/postgres/mock"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/storage"
 	"github.com/bubaew95/yandex-go-learn/internal/core/model"
 	"github.com/bubaew95/yandex-go-learn/internal/core/service"
@@ -284,15 +283,7 @@ func TestHandlerBatch(t *testing.T) {
 		},
 	}
 
-	cfg := &config.Config{
-		BaseURL: "https://site.local",
-	}
-
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	shortenerRepository := mock.NewMockShortenerRepository(ctrl)
-	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
+	shortenerService := NewMockShortenerService(t)
 	shortenerHandler := NewShortenerHandler(shortenerService)
 
 	router := chi.NewRouter()
@@ -307,9 +298,16 @@ func TestHandlerBatch(t *testing.T) {
 			err := json.Unmarshal([]byte(tt.data), &items)
 			require.NoError(t, err)
 
-			shortenerRepository.EXPECT().
-				InsertURLs(gomock.Any(), items).
-				Return(nil)
+			var respItems []model.ShortenerURLResponse
+			for _, item := range items {
+				respItems = append(respItems, model.ShortenerURLResponse{
+					CorrelationID: item.CorrelationID,
+					ShortURL:      "https://site.local/" + item.CorrelationID,
+				})
+			}
+
+			shortenerService.On("InsertURLs", mock.Anything, items).
+				Return(respItems, nil)
 
 			req, err := http.Post(ts.URL+"/api/shorten/batch", "application/json", strings.NewReader(tt.data))
 			require.NoError(t, err)

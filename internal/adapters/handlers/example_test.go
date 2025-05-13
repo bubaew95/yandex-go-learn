@@ -3,23 +3,27 @@ package handlers
 import (
 	"bytes"
 	"fmt"
-	"github.com/bubaew95/yandex-go-learn/internal/core/ports"
-	"github.com/golang/mock/gomock"
+	"github.com/bubaew95/yandex-go-learn/config"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/logger"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/postgres"
+	"github.com/bubaew95/yandex-go-learn/internal/core/service"
+	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"net/http/httptest"
 )
 
 func ExampleShortenerHandler_AddNewURL() {
-	ctrl := gomock.NewController(nil)
-	defer ctrl.Finish()
+	cfg := config.Config{}
 
-	mockService := ports.NewMockShortenerService(ctrl)
-	mockService.EXPECT().
-		GenerateURL(gomock.Any(), "https://example.com", gomock.Any()).
-		Return("http://short.url/abc123", nil)
+	shortenerRepository, err := postgres.NewShortenerRepository(cfg)
+	if err != nil {
+		logger.Log.Fatal("Database initialization error", zap.Error(err))
+	}
 
-	handler := NewShortenerHandler(mockService)
+	shortenerService := service.NewShortenerService(shortenerRepository, cfg)
+
+	handler := NewShortenerHandler(shortenerService)
 
 	req := httptest.NewRequest(http.MethodPost, "/", bytes.NewBufferString("https://example.com"))
 	w := httptest.NewRecorder()

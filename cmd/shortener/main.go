@@ -20,7 +20,6 @@ import (
 	fileStorage "github.com/bubaew95/yandex-go-learn/internal/adapters/repository/filestorage"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/postgres"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/storage"
-	"github.com/bubaew95/yandex-go-learn/internal/core/ports"
 	"github.com/bubaew95/yandex-go-learn/internal/core/service"
 )
 
@@ -73,7 +72,7 @@ func runApp() error {
 	return nil
 }
 
-func initRepository(cfg config.Config) (ports.ShortenerRepository, error) {
+func initRepository(cfg config.Config) (service.ShortenerRepository, error) {
 	if cfg.DataBaseDSN != "" {
 		shortenerRepository, err := postgres.NewShortenerRepository(cfg)
 		if err != nil {
