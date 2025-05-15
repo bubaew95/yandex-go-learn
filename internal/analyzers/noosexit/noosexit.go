@@ -1,22 +1,29 @@
+// Пакет noosexit реализует анализатор, запрещающий прямой вызов os.Exit
+// в функции main пакета main.
 package noosexit
 
 import (
 	"go/ast"
-	"go/types"
 
 	"golang.org/x/tools/go/analysis"
 )
 
+// NewAnalyzer возвращает анализатор, который находит вызовы os.Exit
+// в функции main главного пакета.
 func NewAnalyzer() *analysis.Analyzer {
 	return &analysis.Analyzer{
 		Name: "noosexit",
-		Doc:  "reports any usage of os.Exit anywhere in the codebase",
+		Doc:  "reports direct usage of os.Exit in main.main",
 		Run:  run,
 	}
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
 	for _, file := range pass.Files {
+		if pass.Pkg.Name() != "main" {
+			continue
+		}
+
 		ast.Inspect(file, func(n ast.Node) bool {
 			call, ok := n.(*ast.CallExpr)
 			if !ok {
@@ -29,17 +36,14 @@ func run(pass *analysis.Pass) (interface{}, error) {
 			}
 
 			ident, ok := sel.X.(*ast.Ident)
-			if !ok {
+			if !ok || ident.Name != "os" {
 				return true
 			}
 
-			obj := pass.TypesInfo.Uses[ident]
-			if pkg, ok := obj.(*types.PkgName); ok && pkg.Imported().Path() == "os" {
-				pass.Reportf(call.Pos(), "usage of os.Exit is not allowed")
-			}
-
+			pass.Reportf(call.Pos(), "direct call to os.Exit in main.main is not allowed")
 			return true
 		})
 	}
+
 	return nil, nil
 }
