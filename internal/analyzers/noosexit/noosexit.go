@@ -1,38 +1,43 @@
-// Пакет noosexit реализует анализатор, запрещающий прямой вызов os.Exit
-// в функции main пакета main.
 package noosexit
 
 import (
 	"go/ast"
+	"go/types"
+
 	"golang.org/x/tools/go/analysis"
 )
 
-// NewAnalyzer возвращает анализатор, который находит вызовы os.Exit
-// в функции main главного пакета.
 func NewAnalyzer() *analysis.Analyzer {
 	return &analysis.Analyzer{
 		Name: "noosexit",
-		Doc:  "reports direct usage of os.Exit in main.main",
+		Doc:  "reports any usage of os.Exit anywhere in the codebase",
 		Run:  run,
 	}
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
 	for _, file := range pass.Files {
-		if pass.Pkg.Name() != "main" {
-			continue
-		}
 		ast.Inspect(file, func(n ast.Node) bool {
-			// Ищем вызов os.Exit в функции main
-			if call, ok := n.(*ast.CallExpr); ok {
-				if sel, ok := call.Fun.(*ast.SelectorExpr); ok {
-					if sel.Sel.Name == "Exit" {
-						if ident, ok := sel.X.(*ast.Ident); ok && ident.Name == "os" {
-							pass.Reportf(call.Pos(), "direct call to os.Exit in main.main is not allowed")
-						}
-					}
-				}
+			call, ok := n.(*ast.CallExpr)
+			if !ok {
+				return true
 			}
+
+			sel, ok := call.Fun.(*ast.SelectorExpr)
+			if !ok || sel.Sel.Name != "Exit" {
+				return true
+			}
+
+			ident, ok := sel.X.(*ast.Ident)
+			if !ok {
+				return true
+			}
+
+			obj := pass.TypesInfo.Uses[ident]
+			if pkg, ok := obj.(*types.PkgName); ok && pkg.Imported().Path() == "os" {
+				pass.Reportf(call.Pos(), "usage of os.Exit is not allowed")
+			}
+
 			return true
 		})
 	}

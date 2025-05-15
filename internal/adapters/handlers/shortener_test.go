@@ -3,13 +3,14 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/stretchr/testify/mock"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/mock"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"

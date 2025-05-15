@@ -3,10 +3,11 @@ package service
 import (
 	"context"
 	"errors"
+	"testing"
+
 	"github.com/bubaew95/yandex-go-learn/config"
 	"github.com/bubaew95/yandex-go-learn/internal/core/model"
 	"github.com/stretchr/testify/mock"
-	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
