@@ -56,6 +56,10 @@ jobs:
         run: |
           go test ./... -coverprofile=coverage.out; go tool cover -func=coverage.out
 
+      - name: Static lint
+        run: |
+          go run ./cmd/staticlint/main.go ./...
+
       - name: Setup go deps
         run: |
           go install golang.org/x/tools/cmd/goimports@latest
