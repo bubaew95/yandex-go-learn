@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/bubaew95/yandex-go-learn/internal/analyzers/noosexit"
 	"golang.org/x/tools/go/analysis/passes/ctrlflow"
 	"golang.org/x/tools/go/analysis/passes/inspect"
 	"strings"
@@ -40,7 +41,7 @@ func main() {
 	)
 
 	// 5. Добавить свой собственный
-	//mychecks = append(mychecks, noosexit.NewAnalyzer())
+	mychecks = append(mychecks, noosexit.NewAnalyzer())
 
 	// Запуск
 	multichecker.Main(mychecks...)
