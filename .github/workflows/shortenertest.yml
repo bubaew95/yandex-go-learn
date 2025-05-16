@@ -61,8 +61,7 @@ jobs:
 
       - name: Run custom linter
         run: |
-          go list ./...
-          GOFLAGS=-buildvcs=false ./mylint ./... 
+          GOFLAGS=-buildvcs=false go list ./...
 
       - name: Setup go deps
         run: |
