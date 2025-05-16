@@ -60,7 +60,9 @@ jobs:
         run: GOFLAGS=-buildvcs=false go build -buildvcs=false -o mylint ./cmd/staticlint
 
       - name: Run custom linter
-        run: GOFLAGS=-buildvcs=false ./mylint ./...
+        run: |
+          GOFLAGS=-buildvcs=false ./mylint ./... 
+          go list ./...
 
       - name: Setup go deps
         run: |
