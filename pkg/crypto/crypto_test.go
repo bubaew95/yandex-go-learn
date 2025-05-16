@@ -1,9 +1,33 @@
 package crypto
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestCrypto(t *testing.T) {
+	token := GenerateUserID()
+
+	encodeUserID, err := EncodeUserID(token)
+	require.NoError(t, err)
+
+	decodeUserID, err := DecodeUserID(encodeUserID)
+	require.NoError(t, err)
+
+	encIDRSA, err := EncodeUserIDRSA(token)
+	require.NoError(t, err)
+
+	decodeIDRSA, err := DecodeUserIDRSA(encIDRSA)
+	require.NoError(t, err)
+
+	assert.NotEmpty(t, token)
+	assert.True(t, decodeUserID == token)
+	assert.True(t, decodeIDRSA == token)
+}
 
 func BenchmarkDecodeUserID(b *testing.B) {
-
 	eUserID, _ := EncodeUserID("test")
 	eIUserID, _ := EncodeUserIDRSA("test")
 

@@ -20,7 +20,6 @@ import (
 	fileStorage "github.com/bubaew95/yandex-go-learn/internal/adapters/repository/filestorage"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/postgres"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/storage"
-	"github.com/bubaew95/yandex-go-learn/internal/core/ports"
 	"github.com/bubaew95/yandex-go-learn/internal/core/service"
 )
 
@@ -28,7 +27,15 @@ type closer interface {
 	Close() error
 }
 
+var (
+	buildVersion = "N/A"
+	buildDate    = "N/A"
+	buildCommit  = "N/A"
+)
+
 func main() {
+	fmt.Printf("Build version: %s\nBuild date: %s\nBuild commit: %s\n", buildVersion, buildDate, buildCommit)
+
 	if err := runApp(); err != nil {
 		logger.Log.Fatal("Application startup error", zap.Error(err))
 	}
@@ -65,7 +72,7 @@ func runApp() error {
 	return nil
 }
 
-func initRepository(cfg config.Config) (ports.ShortenerRepository, error) {
+func initRepository(cfg config.Config) (service.ShortenerRepository, error) {
 	if cfg.DataBaseDSN != "" {
 		shortenerRepository, err := postgres.NewShortenerRepository(cfg)
 		if err != nil {
