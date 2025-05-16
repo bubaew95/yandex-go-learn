@@ -26,6 +26,10 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		}
 
 		filename := pass.Fset.Position(file.Pos()).Filename
+		if strings.Contains(filename, "go-build") {
+			continue
+		}
+
 		if strings.HasSuffix(filename, "_test.go") {
 			continue
 		}
