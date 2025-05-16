@@ -4,6 +4,7 @@ package noosexit
 
 import (
 	"go/ast"
+	"strings"
 
 	"golang.org/x/tools/go/analysis"
 )
@@ -21,6 +22,11 @@ func NewAnalyzer() *analysis.Analyzer {
 func run(pass *analysis.Pass) (interface{}, error) {
 	for _, file := range pass.Files {
 		if pass.Pkg.Name() != "main" {
+			continue
+		}
+
+		filename := pass.Fset.Position(file.Pos()).Filename
+		if strings.HasSuffix(filename, "_test.go") {
 			continue
 		}
 
