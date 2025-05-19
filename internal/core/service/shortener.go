@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/bubaew95/yandex-go-learn/config"
-	"github.com/bubaew95/yandex-go-learn/internal/adapters/logger"
 	"github.com/bubaew95/yandex-go-learn/internal/core/model"
 )
 
@@ -172,7 +171,7 @@ func (s ShortenerService) GetURLSByUserID(ctx context.Context, userID string) ([
 			ShortURL:    s.generateResponseURL(k),
 		})
 	}
-	logger.Log.Debug(fmt.Sprintf("test data %v", responseURLs))
+
 	return responseURLs, err
 }
 

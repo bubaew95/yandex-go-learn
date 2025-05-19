@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -196,7 +195,6 @@ func (s ShortenerHandler) AddNewURL(res http.ResponseWriter, req *http.Request) 
 // Если при подключении возникла ошибка - возврашает HTTP 500 статус.
 func (s ShortenerHandler) Ping(w http.ResponseWriter, r *http.Request) {
 	if err := s.service.Ping(r.Context()); err != nil {
-		fmt.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
