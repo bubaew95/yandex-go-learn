@@ -36,10 +36,10 @@ func TestRandStringBytes(t *testing.T) {
 	repo := NewMockShortenerRepository(t)
 	service := NewShortenerService(repo, config.Config{})
 
-	randomId := service.RandStringBytes(8)
+	randomID := service.RandStringBytes(8)
 
-	assert.NotEmpty(t, randomId)
-	assert.Len(t, randomId, 8)
+	assert.NotEmpty(t, randomID)
+	assert.Len(t, randomID, 8)
 }
 
 func TestGetURLByID(t *testing.T) {
