@@ -1,11 +1,12 @@
 package middleware
 
 import (
-	"github.com/bubaew95/yandex-go-learn/pkg/crypto"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/bubaew95/yandex-go-learn/pkg/crypto"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCookieMiddleware(t *testing.T) {

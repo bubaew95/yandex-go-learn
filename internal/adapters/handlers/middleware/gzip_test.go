@@ -14,18 +14,16 @@ import (
 
 func TestGZipMiddleware(t *testing.T) {
 	t.Run("decompress gzip request and compress gzip response", func(t *testing.T) {
-		// Подготовка сжатого тела запроса
 		originalBody := `{"message":"hello world"}`
 		var compressedBody bytes.Buffer
+
 		gz := gzip.NewWriter(&compressedBody)
 		_, err := gz.Write([]byte(originalBody))
 		require.NoError(t, err)
 		require.NoError(t, gz.Close())
 
-		// Оборачиваем тестовый хендлер в middleware
 		handler := GZipMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			body, err := io.ReadAll(r.Body)
-			require.NoError(t, err)
+			body, _ := io.ReadAll(r.Body)
 			assert.Equal(t, originalBody, string(body))
 
 			w.Header().Set("Content-Type", "application/json")
@@ -45,7 +43,6 @@ func TestGZipMiddleware(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-		// Распаковка gzip-ответа
 		gr, err := gzip.NewReader(resp.Body)
 		require.NoError(t, err)
 		defer gr.Close()

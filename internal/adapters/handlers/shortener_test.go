@@ -3,13 +3,14 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
-	"github.com/bubaew95/yandex-go-learn/internal/adapters/constants"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/constants"
 
 	"github.com/stretchr/testify/mock"
 
