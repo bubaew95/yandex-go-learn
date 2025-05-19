@@ -56,6 +56,13 @@ jobs:
         run: |
           go test ./... -coverprofile=coverage.out; go tool cover -func=coverage.out
 
+      - name: Install custom linter
+        run: GOFLAGS=-buildvcs=false go build -buildvcs=false -o mylint ./cmd/staticlint
+
+      - name: Run custom linter
+        run: |
+          GOFLAGS=-buildvcs=false ./mylint ./... 
+
       - name: Setup go deps
         run: |
           go install golang.org/x/tools/cmd/goimports@latest

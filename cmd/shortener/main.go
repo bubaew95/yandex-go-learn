@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"golang.org/x/crypto/acme/autocert"
 	"net/http"
 	"sync"
 
@@ -20,7 +21,6 @@ import (
 	fileStorage "github.com/bubaew95/yandex-go-learn/internal/adapters/repository/filestorage"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/postgres"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/storage"
-	"github.com/bubaew95/yandex-go-learn/internal/core/ports"
 	"github.com/bubaew95/yandex-go-learn/internal/core/service"
 )
 
@@ -28,7 +28,15 @@ type closer interface {
 	Close() error
 }
 
+var (
+	buildVersion = "N/A"
+	buildDate    = "N/A"
+	buildCommit  = "N/A"
+)
+
 func main() {
+	fmt.Printf("Build version: %s\nBuild date: %s\nBuild commit: %s\n", buildVersion, buildDate, buildCommit)
+
 	if err := runApp(); err != nil {
 		logger.Log.Fatal("Application startup error", zap.Error(err))
 	}
@@ -56,16 +64,23 @@ func runApp() error {
 	shortenerHandler := handlers.NewShortenerHandler(shortenerService)
 	route := setupRouter(shortenerHandler)
 
-	logger.Log.Info("Running server", zap.String("ports", cfg.Port))
-	if err := http.ListenAndServe(cfg.Port, route); err != nil {
-		return fmt.Errorf("server startup error: %w", err)
+	if cfg.EnableHTTPS != "" {
+		logger.Log.Info("Running https server", zap.String("port", cfg.Port))
+		if err := http.Serve(autocert.NewListener(cfg.Port), route); err != nil {
+			return fmt.Errorf("http server startup error: %w", err)
+		}
+	} else {
+		logger.Log.Info("Running server", zap.String("ports", cfg.Port))
+		if err := http.ListenAndServe(cfg.Port, route); err != nil {
+			return fmt.Errorf("server startup error: %w", err)
+		}
 	}
 
 	wg.Wait()
 	return nil
 }
 
-func initRepository(cfg config.Config) (ports.ShortenerRepository, error) {
+func initRepository(cfg config.Config) (service.ShortenerRepository, error) {
 	if cfg.DataBaseDSN != "" {
 		shortenerRepository, err := postgres.NewShortenerRepository(cfg)
 		if err != nil {
