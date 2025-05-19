@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"golang.org/x/crypto/acme/autocert"
 	"net/http"
 	"sync"
 
@@ -63,9 +64,16 @@ func runApp() error {
 	shortenerHandler := handlers.NewShortenerHandler(shortenerService)
 	route := setupRouter(shortenerHandler)
 
-	logger.Log.Info("Running server", zap.String("ports", cfg.Port))
-	if err := http.ListenAndServe(cfg.Port, route); err != nil {
-		return fmt.Errorf("server startup error: %w", err)
+	if cfg.EnableHttps != "" {
+		logger.Log.Info("Running https server", zap.String("port", cfg.Port))
+		if err := http.Serve(autocert.NewListener(cfg.Port), route); err != nil {
+			return fmt.Errorf("http server startup error: %w", err)
+		}
+	} else {
+		logger.Log.Info("Running server", zap.String("ports", cfg.Port))
+		if err := http.ListenAndServe(cfg.Port, route); err != nil {
+			return fmt.Errorf("server startup error: %w", err)
+		}
 	}
 
 	wg.Wait()
