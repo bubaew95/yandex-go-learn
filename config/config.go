@@ -20,8 +20,8 @@ type Config struct {
 	// DataBaseDSN строка подключения к базе данных
 	DataBaseDSN string
 
-	// EnableHttps Включить https протокол
-	EnableHttps string
+	// EnableHTTPS Включить https протокол
+	EnableHTTPS string
 }
 
 // NewConfig создает и возвращает структуру конфигурации Config,
@@ -31,7 +31,7 @@ func NewConfig() *Config {
 	baseURL := flag.String("b", "", " отвечает за базовый адрес результирующего сокращённого URL")
 	filePath := flag.String("f", "data.json", "путь до файла, куда сохраняются данные в формате JSON")
 	databaseDSN := flag.String("d", "", "Строка подключения к БД")
-	enableHttps := flag.String("s", "", "Включить https протокол")
+	enableHTTPS := flag.String("s", "", "Включить https протокол")
 
 	flag.Parse()
 
@@ -55,8 +55,8 @@ func NewConfig() *Config {
 		*databaseDSN = envDataBaseDSN
 	}
 
-	if envEnableHttps := os.Getenv("ENABLE_HTTPS"); envEnableHttps != "" {
-		*enableHttps = envEnableHttps
+	if envEnableHTTPS := os.Getenv("ENABLE_HTTPS"); envEnableHTTPS != "" {
+		*enableHTTPS = envEnableHTTPS
 	}
 
 	return &Config{
@@ -64,6 +64,6 @@ func NewConfig() *Config {
 		BaseURL:     *baseURL,
 		FilePath:    *filePath,
 		DataBaseDSN: *databaseDSN,
-		EnableHttps: *enableHttps,
+		EnableHTTPS: *enableHTTPS,
 	}
 }
