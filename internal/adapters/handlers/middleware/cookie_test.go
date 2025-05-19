@@ -50,6 +50,7 @@ func TestCookieMiddleware(t *testing.T) {
 			w := httptest.NewRecorder()
 			handler.ServeHTTP(w, req)
 			resp := w.Result()
+			defer resp.Body.Close()
 
 			cookies := resp.Cookies()
 			var userIDCookie *http.Cookie
