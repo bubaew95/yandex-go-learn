@@ -1,0 +1,7 @@
+{
+  "server_address": "8084",
+  "base_url": "http://localhost",
+  "file_storage_path": "data.json",
+  "database_dsn": "",
+  "enable_https": false
+}
