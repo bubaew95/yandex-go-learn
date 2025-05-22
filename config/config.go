@@ -101,7 +101,7 @@ func NewConfig() *Config {
 		config.Port = "8080"
 	}
 
-	if strings.Contains(config.Port, ":") == false {
+	if !strings.Contains(config.Port, ":") {
 		config.Port = ":" + config.Port
 	}
 

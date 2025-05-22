@@ -64,7 +64,7 @@ func runApp() error {
 	shortenerHandler := handlers.NewShortenerHandler(shortenerService)
 	route := setupRouter(shortenerHandler)
 
-	if cfg.EnableHTTPS != false {
+	if cfg.EnableHTTPS {
 		logger.Log.Info("Running https server", zap.String("port", cfg.Port))
 		if err := http.Serve(autocert.NewListener(cfg.Port), route); err != nil {
 			return fmt.Errorf("http server startup error: %w", err)
