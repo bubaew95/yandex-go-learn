@@ -1,35 +1,50 @@
 package handlers
 
-import "fmt"
+import (
+	"bytes"
+	"fmt"
+	"github.com/bubaew95/yandex-go-learn/config"
+	fileStorage "github.com/bubaew95/yandex-go-learn/internal/adapters/repository/filestorage"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/storage"
+	"github.com/bubaew95/yandex-go-learn/internal/core/service"
+	"github.com/go-chi/chi/v5"
+	"net/http"
+	"net/http/httptest"
+	"os"
+)
 
 func ExampleShortenerHandler_AddNewURL() {
-	//cfg := config.NewConfig()
-	//
-	//t := NewMockShortenerService()
-	//
-	//shortenerDB, _ := storage.NewShortenerDB(*cfg)
-	//shortener, _ := fileStorage.NewShortenerRepository(*shortenerDB)
-	//
-	//mockService := service.NewShortenerService(shortener, *cfg)
-	//handler := NewShortenerHandler(mockService)
-	//
-	//req := httptest.NewRequest(http.MethodPost, "/", bytes.NewBufferString("https://example.com"))
-	//w := httptest.NewRecorder()
-	//
-	//handler.CreateURL(w, req)
-	//
-	//res := w.Result()
-	//defer res.Body.Close()
-	//
-	//body, _ := io.ReadAll(res.Body)
+	cfg := config.Config{
+		FilePath: "data.json",
+	}
+	defer os.Remove(cfg.FilePath)
 
-	//fmt.Println(res.StatusCode)
-	//fmt.Println(string(body))
+	shortenerDB, _ := storage.NewShortenerDB(cfg)
+	shortenerRepository, err := fileStorage.NewShortenerRepository(*shortenerDB)
+	if err != nil {
+		fmt.Println("Ошибка")
+		return
+	}
 
-	fmt.Println(201)
-	fmt.Println("http://short.url/abc123")
+	mockService := service.NewShortenerService(shortenerRepository, cfg)
+	handler := NewShortenerHandler(mockService)
+
+	route := chi.NewRouter()
+	route.Post("/", handler.CreateURL)
+
+	ts := httptest.NewServer(route)
+	defer ts.Close()
+
+	req := httptest.NewRequest(http.MethodPost, "/", bytes.NewBufferString("https://example.com"))
+	w := httptest.NewRecorder()
+
+	handler.CreateURL(w, req)
+
+	res := w.Result()
+	defer res.Body.Close()
+
+	fmt.Println(res.StatusCode)
 
 	// Output:
 	// 201
-	// http://short.url/abc123
 }
