@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"golang.org/x/crypto/acme/autocert"
 	"net/http"
+	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 
 	chi_middleware "github.com/go-chi/chi/v5/middleware"
 
@@ -66,15 +69,24 @@ func runApp() error {
 
 	if cfg.EnableHTTPS {
 		logger.Log.Info("Running https server", zap.String("port", cfg.Port))
-		if err := http.Serve(autocert.NewListener(cfg.Port), route); err != nil {
-			return fmt.Errorf("http server startup error: %w", err)
-		}
+		go func() {
+			if err := http.Serve(autocert.NewListener(cfg.Port), route); err != nil {
+				logger.Log.Fatal("Failed to start https server", zap.Error(err))
+			}
+		}()
 	} else {
 		logger.Log.Info("Running server", zap.String("ports", cfg.Port))
-		if err := http.ListenAndServe(cfg.Port, route); err != nil {
-			return fmt.Errorf("server startup error: %w", err)
-		}
+		go func() {
+			if err := http.ListenAndServe(cfg.Port, route); err != nil {
+				logger.Log.Fatal("Failed to start http server", zap.Error(err))
+			}
+		}()
 	}
+
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	<-ch
+	logger.Log.Info("Shutting down...")
 
 	wg.Wait()
 	return nil
