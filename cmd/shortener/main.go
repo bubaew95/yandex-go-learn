@@ -71,7 +71,7 @@ func runApp() error {
 		logger.Log.Info("Running https server", zap.String("port", cfg.Port))
 		go func() {
 			if err := http.Serve(autocert.NewListener(cfg.Port), route); err != nil {
-				logger.Log.Fatal("Failed to start https server", zap.Error(err))
+				logger.Log.Fatal("Failed to start https(tsl) server", zap.Error(err))
 			}
 		}()
 	} else {
