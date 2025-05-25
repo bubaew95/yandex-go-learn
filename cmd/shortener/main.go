@@ -3,14 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
+	chi_middleware "github.com/go-chi/chi/v5/middleware"
 	"golang.org/x/crypto/acme/autocert"
 	"net/http"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
-
-	chi_middleware "github.com/go-chi/chi/v5/middleware"
 
 	_ "net/http/pprof"
 
@@ -67,17 +66,22 @@ func runApp() error {
 	shortenerHandler := handlers.NewShortenerHandler(shortenerService)
 	route := setupRouter(shortenerHandler)
 
+	server := &http.Server{
+		Addr:    cfg.Port,
+		Handler: route,
+	}
+
 	if cfg.EnableHTTPS {
 		logger.Log.Info("Running https server", zap.String("port", cfg.Port))
 		go func() {
-			if err := http.Serve(autocert.NewListener(cfg.Port), route); err != nil {
+			if err := server.Serve(autocert.NewListener(cfg.Port)); err != nil {
 				logger.Log.Fatal("Failed to start https(tsl) server", zap.Error(err))
 			}
 		}()
 	} else {
 		logger.Log.Info("Running server", zap.String("ports", cfg.Port))
 		go func() {
-			if err := http.ListenAndServe(cfg.Port, route); err != nil {
+			if err := server.ListenAndServe(); err != nil {
 				logger.Log.Fatal("Failed to start http server", zap.Error(err))
 			}
 		}()
@@ -86,10 +90,18 @@ func runApp() error {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 	<-ch
-	logger.Log.Info("Shutting down...")
+
+	shutDown(server, ctx)
 
 	wg.Wait()
 	return nil
+}
+
+func shutDown(server *http.Server, ctx context.Context) {
+	logger.Log.Info("Shutting down...")
+	if err := server.Shutdown(ctx); err != nil {
+		logger.Log.Info("Http server shutdown error", zap.Error(err))
+	}
 }
 
 func initRepository(cfg config.Config) (service.ShortenerRepository, error) {
