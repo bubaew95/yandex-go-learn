@@ -202,6 +202,7 @@ func (s ShortenerService) Run(ctx context.Context, wg *sync.WaitGroup) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+		defer ticker.Stop()
 
 		for {
 			select {
@@ -223,8 +224,15 @@ func (s ShortenerService) Run(ctx context.Context, wg *sync.WaitGroup) {
 				s.DeleteUserURLS(ctx, batch)
 				batch = batch[:0]
 			case <-ctx.Done():
+				if len(batch) > 0 {
+					s.DeleteUserURLS(ctx, batch)
+				}
 				return
 			}
 		}
 	}()
+}
+
+func (s ShortenerService) CloseDeleteChan() {
+	close(s.deleteChan)
 }

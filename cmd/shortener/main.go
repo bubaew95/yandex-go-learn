@@ -2,16 +2,17 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	chi_middleware "github.com/go-chi/chi/v5/middleware"
 	"golang.org/x/crypto/acme/autocert"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
-
-	_ "net/http/pprof"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
@@ -67,22 +68,22 @@ func runApp() error {
 	route := setupRouter(shortenerHandler)
 
 	server := &http.Server{
-		Addr:    cfg.Port,
+		Addr:    cfg.ServerAddress,
 		Handler: route,
 	}
 
 	if cfg.EnableHTTPS {
-		logger.Log.Info("Running https server", zap.String("port", cfg.Port))
+		logger.Log.Info("Running https server", zap.String("port", cfg.ServerAddress))
 		go func() {
 			if err := server.Serve(autocert.NewListener("example.com")); err != nil {
-				logger.Log.Fatal("Failed to start https(tsl) server", zap.Error(err))
+				logger.Log.Error("Failed to start https(tsl) server", zap.Error(err))
 			}
 		}()
 	} else {
-		logger.Log.Info("Running server", zap.String("ports", cfg.Port))
+		logger.Log.Info("Running server", zap.String("ports", cfg.ServerAddress))
 		go func() {
-			if err := server.ListenAndServe(); err != nil {
-				logger.Log.Fatal("Failed to start http server", zap.Error(err))
+			if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				logger.Log.Error("Failed to start http server", zap.Error(err))
 			}
 		}()
 	}
@@ -91,17 +92,18 @@ func runApp() error {
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 	<-ch
 
-	shutDown(server, ctx)
+	shortenerService.CloseDeleteChan()
+
+	shutdownCtx, cancelShutdown := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelShutdown()
+
+	logger.Log.Info("Shutting down...")
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		logger.Log.Info("Http server shutdown error", zap.Error(err))
+	}
 
 	wg.Wait()
 	return nil
-}
-
-func shutDown(server *http.Server, ctx context.Context) {
-	logger.Log.Info("Shutting down...")
-	if err := server.Shutdown(ctx); err != nil {
-		logger.Log.Info("Http server shutdown error", zap.Error(err))
-	}
 }
 
 func initRepository(cfg config.Config) (service.ShortenerRepository, error) {

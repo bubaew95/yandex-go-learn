@@ -13,8 +13,8 @@ import (
 
 // Config содержит параметры конфигурации приложения.
 type Config struct {
-	// Port на котором запускается web сервер
-	Port string `json:"server_address"`
+	// ServerAddress на котором запускается web сервер
+	ServerAddress string `json:"server_address"`
 
 	//BaseURL базовый адрес
 	BaseURL string `json:"base_path"`
@@ -36,11 +36,11 @@ func NewConfig() *Config {
 	var config Config
 	var fileConfigPath string
 
-	port := flag.String("a", "", "отвечает за адрес запуска HTTP-сервера")
-	baseURL := flag.String("b", "", " отвечает за базовый адрес результирующего сокращённого URL")
-	filePath := flag.String("f", "", "путь до файла, куда сохраняются данные в формате JSON")
-	databaseDSN := flag.String("d", "", "Строка подключения к БД")
-	enableHTTPS := flag.Bool("s", false, "Включить https протокол")
+	serverAddress := flag.String("a", "", "Адрес запуска HTTP-сервера")
+	baseURL := flag.String("b", "", "Базовый адрес сокращённого URL")
+	filePath := flag.String("f", "", "Путь до JSON-файла")
+	databaseDSN := flag.String("d", "", "Строка подключения к базе данных")
+	enableHTTPS := flag.Bool("s", false, "Включить HTTPS")
 
 	flag.StringVar(&fileConfigPath, "c", "", "Путь к JSON файлу конфигурации")
 	flag.StringVar(&fileConfigPath, "config", "", "Путь к JSON файлу конфигурации")
@@ -58,8 +58,8 @@ func NewConfig() *Config {
 		}
 	}
 
-	if *port != "" {
-		config.Port = *port
+	if *serverAddress != "" {
+		config.ServerAddress = *serverAddress
 	}
 	if *baseURL != "" {
 		config.BaseURL = *baseURL
@@ -75,7 +75,7 @@ func NewConfig() *Config {
 	}
 
 	if envServerAddr := os.Getenv("SERVER_ADDRESS"); envServerAddr != "" {
-		config.Port = envServerAddr
+		config.ServerAddress = envServerAddr
 	}
 
 	if envBaseURL := os.Getenv("BASE_URL"); envBaseURL != "" {
@@ -97,16 +97,16 @@ func NewConfig() *Config {
 		}
 	}
 
-	if config.Port == "" {
-		config.Port = "8080"
+	if config.ServerAddress == "" {
+		config.ServerAddress = "8080"
 	}
 
-	if !strings.Contains(config.Port, ":") {
-		config.Port = ":" + config.Port
+	if !strings.Contains(config.ServerAddress, ":") {
+		config.ServerAddress = ":" + config.ServerAddress
 	}
 
 	if config.BaseURL == "" {
-		config.BaseURL = fmt.Sprintf("http://localhost%s", config.Port)
+		config.BaseURL = fmt.Sprintf("http://localhost%s", config.ServerAddress)
 	}
 
 	if config.FilePath == "" {
