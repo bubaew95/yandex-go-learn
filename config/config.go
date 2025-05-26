@@ -1,6 +1,7 @@
 package config
 
 import (
+	"cmp"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -58,36 +59,18 @@ func NewConfig() *Config {
 		}
 	}
 
-	if *serverAddress != "" {
-		config.ServerAddress = *serverAddress
+	config.ServerAddress = cmp.Or(os.Getenv("SERVER_ADDRESS"), *serverAddress, config.ServerAddress, "8080")
+
+	if !strings.Contains(config.ServerAddress, ":") {
+		config.ServerAddress = ":" + config.ServerAddress
 	}
-	if *baseURL != "" {
-		config.BaseURL = *baseURL
-	}
-	if *filePath != "" {
-		config.FilePath = *filePath
-	}
-	if *databaseDSN != "" {
-		config.DataBaseDSN = *databaseDSN
-	}
+
+	config.BaseURL = cmp.Or(os.Getenv("BASE_URL"), *baseURL, config.BaseURL, fmt.Sprintf("http://localhost%s", config.ServerAddress))
+	config.FilePath = cmp.Or(os.Getenv("FILE_STORAGE_PATH"), *filePath, config.FilePath, "data.json")
+	config.DataBaseDSN = cmp.Or(os.Getenv("DATABASE_DSN"), *databaseDSN, config.DataBaseDSN)
+
 	if *enableHTTPS {
 		config.EnableHTTPS = *enableHTTPS
-	}
-
-	if envServerAddr := os.Getenv("SERVER_ADDRESS"); envServerAddr != "" {
-		config.ServerAddress = envServerAddr
-	}
-
-	if envBaseURL := os.Getenv("BASE_URL"); envBaseURL != "" {
-		config.BaseURL = envBaseURL
-	}
-
-	if envFilePath := os.Getenv("FILE_STORAGE_PATH"); envFilePath != "" {
-		config.FilePath = envFilePath
-	}
-
-	if envDataBaseDSN := os.Getenv("DATABASE_DSN"); envDataBaseDSN != "" {
-		config.DataBaseDSN = envDataBaseDSN
 	}
 
 	if envEnableHTTPS := os.Getenv("ENABLE_HTTPS"); envEnableHTTPS != "" {
@@ -97,23 +80,6 @@ func NewConfig() *Config {
 		}
 	}
 
-	if config.ServerAddress == "" {
-		config.ServerAddress = "8080"
-	}
-
-	if !strings.Contains(config.ServerAddress, ":") {
-		config.ServerAddress = ":" + config.ServerAddress
-	}
-
-	if config.BaseURL == "" {
-		config.BaseURL = fmt.Sprintf("http://localhost%s", config.ServerAddress)
-	}
-
-	if config.FilePath == "" {
-		config.FilePath = "data.json"
-	}
-
-	fmt.Println(config)
 	return &config
 }
 
