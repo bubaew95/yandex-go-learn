@@ -2,13 +2,17 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"net/http"
-	"sync"
-
 	chi_middleware "github.com/go-chi/chi/v5/middleware"
-
+	"golang.org/x/crypto/acme/autocert"
+	"net/http"
 	_ "net/http/pprof"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
@@ -63,10 +67,40 @@ func runApp() error {
 	shortenerHandler := handlers.NewShortenerHandler(shortenerService)
 	route := setupRouter(shortenerHandler)
 
-	logger.Log.Info("Running server", zap.String("ports", cfg.Port))
-	if err := http.ListenAndServe(cfg.Port, route); err != nil {
-		return fmt.Errorf("server startup error: %w", err)
+	server := &http.Server{
+		Addr:    cfg.ServerAddress,
+		Handler: route,
 	}
+
+	if cfg.EnableHTTPS {
+		logger.Log.Info("Running https server", zap.String("port", cfg.ServerAddress))
+		go func() {
+			if err := server.Serve(autocert.NewListener("example.com")); err != nil {
+				logger.Log.Error("Failed to start https(tsl) server", zap.Error(err))
+			}
+		}()
+	} else {
+		logger.Log.Info("Running server", zap.String("ports", cfg.ServerAddress))
+		go func() {
+			if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				logger.Log.Error("Failed to start http server", zap.Error(err))
+			}
+		}()
+	}
+
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	<-ch
+
+	shutdownCtx, cancelShutdown := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelShutdown()
+
+	logger.Log.Info("Shutting down...")
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		logger.Log.Info("Http server shutdown error", zap.Error(err))
+	}
+
+	shortenerService.Close()
 
 	wg.Wait()
 	return nil

@@ -137,9 +137,9 @@ func TestHandlerGet(t *testing.T) {
 	}
 
 	cfg := &config.Config{
-		Port:     "9090",
-		BaseURL:  "http://test.local",
-		FilePath: "data.json",
+		ServerAddress: "9090",
+		BaseURL:       "http://test.local",
+		FilePath:      "data.json",
 	}
 
 	shortenerDB, _ := storage.NewShortenerDB(*cfg)

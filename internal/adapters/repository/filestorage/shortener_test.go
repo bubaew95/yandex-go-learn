@@ -16,9 +16,9 @@ import (
 
 func BenchmarkShortenerRepository_InsertURLs(b *testing.B) {
 	cfg := &config.Config{
-		Port:     "9090",
-		BaseURL:  "http://test.local",
-		FilePath: "data.json",
+		ServerAddress: "9090",
+		BaseURL:       "http://test.local",
+		FilePath:      "data.json",
 	}
 
 	defer os.Remove(cfg.FilePath)
