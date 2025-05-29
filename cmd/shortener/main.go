@@ -92,8 +92,6 @@ func runApp() error {
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 	<-ch
 
-	shortenerService.CloseDeleteChan()
-
 	shutdownCtx, cancelShutdown := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelShutdown()
 
@@ -101,6 +99,8 @@ func runApp() error {
 	if err := server.Shutdown(shutdownCtx); err != nil {
 		logger.Log.Info("Http server shutdown error", zap.Error(err))
 	}
+
+	shortenerService.Close()
 
 	wg.Wait()
 	return nil

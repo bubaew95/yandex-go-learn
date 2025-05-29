@@ -233,7 +233,7 @@ func (s ShortenerService) Run(ctx context.Context, wg *sync.WaitGroup) {
 	}()
 }
 
-// CloseDeleteChan - Закрывает канал
-func (s ShortenerService) CloseDeleteChan() {
+// Close - Закрывает канал
+func (s ShortenerService) Close() {
 	close(s.deleteChan)
 }
