@@ -27,7 +27,7 @@ func ExampleShortenerHandler_AddNewURL() {
 	}
 
 	mockService := service.NewShortenerService(shortenerRepository, cfg)
-	handler := NewShortenerHandler(mockService)
+	handler := NewShortenerHandler(mockService, cfg)
 
 	route := chi.NewRouter()
 	route.Post("/", handler.CreateURL)
