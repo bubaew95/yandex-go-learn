@@ -217,6 +217,34 @@ func (_m *MockShortenerService) ScheduleURLDeletion(ctx context.Context, items [
 	_m.Called(ctx, items)
 }
 
+// Stats provides a mock function with given fields: ctx
+func (_m *MockShortenerService) Stats(ctx context.Context) (model.StatsRespose, error) {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Stats")
+	}
+
+	var r0 model.StatsRespose
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (model.StatsRespose, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) model.StatsRespose); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Get(0).(model.StatsRespose)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // NewMockShortenerService creates a new instance of MockShortenerService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewMockShortenerService(t interface {

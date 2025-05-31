@@ -62,3 +62,12 @@ type ShortenerURLSForUserResponse struct {
 	// OriginalURL — исходный URL, связанный с пользователем.
 	OriginalURL string `json:"original_url"`
 }
+
+// StatsRespose описывает вывод статистики
+type StatsRespose struct {
+	// URLs количество сокращённых URL в сервисе
+	URLs int `json:"urls"`
+
+	// Users количество пользователей в сервисе
+	Users int `json:"users"`
+}

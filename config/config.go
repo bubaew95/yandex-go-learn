@@ -28,6 +28,9 @@ type Config struct {
 
 	// EnableHTTPS Включить https протокол
 	EnableHTTPS bool `json:"enable_https"`
+
+	// TrustedSubnet Строковое представление бесклассовой адресации (CIDR)
+	TrustedSubnet string `json:"trusted_subnet"`
 }
 
 // NewConfig создает и возвращает структуру конфигурации Config,
@@ -42,6 +45,7 @@ func NewConfig() *Config {
 	filePath := flag.String("f", "", "Путь до JSON-файла")
 	databaseDSN := flag.String("d", "", "Строка подключения к базе данных")
 	enableHTTPS := flag.Bool("s", false, "Включить HTTPS")
+	trustedSubnet := flag.String("t", "", "Строковое представление бесклассовой адресации")
 
 	flag.StringVar(&fileConfigPath, "c", "", "Путь к JSON файлу конфигурации")
 	flag.StringVar(&fileConfigPath, "config", "", "Путь к JSON файлу конфигурации")
@@ -68,6 +72,7 @@ func NewConfig() *Config {
 	config.BaseURL = cmp.Or(os.Getenv("BASE_URL"), *baseURL, config.BaseURL, fmt.Sprintf("http://localhost%s", config.ServerAddress))
 	config.FilePath = cmp.Or(os.Getenv("FILE_STORAGE_PATH"), *filePath, config.FilePath, "data.json")
 	config.DataBaseDSN = cmp.Or(os.Getenv("DATABASE_DSN"), *databaseDSN, config.DataBaseDSN)
+	config.TrustedSubnet = cmp.Or(os.Getenv("TRUSTED_SUBNET"), *trustedSubnet, config.TrustedSubnet)
 
 	if *enableHTTPS {
 		config.EnableHTTPS = *enableHTTPS

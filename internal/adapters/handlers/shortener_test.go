@@ -70,7 +70,7 @@ func TestHandlerCreate(t *testing.T) {
 	require.NoError(t, err)
 
 	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
-	shortenerHandler := NewShortenerHandler(shortenerService)
+	shortenerHandler := NewShortenerHandler(shortenerService, *cfg)
 
 	route := chi.NewRouter()
 	route.Post("/", shortenerHandler.CreateURL)
@@ -160,7 +160,7 @@ func TestHandlerGet(t *testing.T) {
 	require.NoError(t, err)
 
 	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
-	shortenerHandler := NewShortenerHandler(shortenerService)
+	shortenerHandler := NewShortenerHandler(shortenerService, *cfg)
 
 	route := chi.NewRouter()
 	route.Get("/{id}", shortenerHandler.GetURL)
@@ -227,10 +227,12 @@ func TestHandlerAddNewURLFromJson(t *testing.T) {
 		},
 	}
 
+	cfg := &config.Config{}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			shortenerService := NewMockShortenerService(t)
-			handler := NewShortenerHandler(shortenerService)
+			handler := NewShortenerHandler(shortenerService, *cfg)
 
 			router := chi.NewRouter()
 			router.Post("/api/shorten", handler.AddNewURL)
@@ -326,8 +328,9 @@ func TestHandlerBatch(t *testing.T) {
 		},
 	}
 
+	cfg := &config.Config{}
 	shortenerService := NewMockShortenerService(t)
-	shortenerHandler := NewShortenerHandler(shortenerService)
+	shortenerHandler := NewShortenerHandler(shortenerService, *cfg)
 
 	router := chi.NewRouter()
 	router.Post("/api/shorten/batch", shortenerHandler.Batch)
@@ -425,13 +428,15 @@ func TestShortenerHandler_GetUserURLS(t *testing.T) {
 		},
 	}
 
+	cfg := &config.Config{}
+
 	for _, tt := range tests {
 		tt := tt // захват переменной
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
 			mockService := NewMockShortenerService(t)
-			handler := ShortenerHandler{service: mockService}
+			handler := ShortenerHandler{service: mockService, config: cfg}
 
 			router := chi.NewRouter()
 			router.Get("/api/user/urls", handler.GetUserURLS)
@@ -518,13 +523,15 @@ func TestShortenerHandler_DeleteUserURLS(t *testing.T) {
 		},
 	}
 
+	cfg := &config.Config{}
+
 	for _, tt := range tests {
 		tt := tt // захват переменной
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
 			mockService := NewMockShortenerService(t)
-			handler := ShortenerHandler{service: mockService}
+			handler := ShortenerHandler{service: mockService, config: cfg}
 
 			router := chi.NewRouter()
 			router.Delete("/api/user/urls", handler.DeleteUserURLS)
@@ -559,6 +566,72 @@ func TestShortenerHandler_DeleteUserURLS(t *testing.T) {
 			if tt.mockCalled {
 				mockService.AssertExpectations(t)
 			}
+		})
+	}
+}
+
+func TestShortenerHandler_Stats(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name          string
+		ip            string
+		trustedSubnet string
+		status        int
+		err           bool
+	}{
+		{
+			name:          "Simple",
+			ip:            "127.0.0.1",
+			trustedSubnet: "127.0.0.1/32",
+			status:        http.StatusOK,
+		},
+		{
+			name:          "Not trusted subnet",
+			ip:            "127.0.0.1",
+			trustedSubnet: "",
+			status:        http.StatusForbidden,
+			err:           true,
+		},
+		{
+			name:          "IP disallowed",
+			ip:            "192.168.0.1",
+			trustedSubnet: "127.0.0.1/32",
+			status:        http.StatusForbidden,
+			err:           true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := &config.Config{
+				TrustedSubnet: tt.trustedSubnet,
+			}
+
+			mockService := NewMockShortenerService(t)
+			handler := NewShortenerHandler(mockService, *cfg)
+
+			if !tt.err {
+				mockService.On("Stats", mock.Anything).
+					Return(model.StatsRespose{Users: 1, URLs: 2}, nil).Once()
+			}
+
+			router := chi.NewRouter()
+			router.Get("/api/internal/stats", handler.Stats)
+
+			ts := httptest.NewServer(router)
+			defer ts.Close()
+
+			req, err := http.NewRequest(http.MethodGet, ts.URL+"/api/internal/stats", nil)
+			require.NoError(t, err)
+
+			req.Header.Set("X-Real-IP", tt.ip)
+			resp, err := ts.Client().Do(req)
+			require.NoError(t, err)
+
+			defer resp.Body.Close()
+
+			assert.Equal(t, tt.status, resp.StatusCode)
 		})
 	}
 }

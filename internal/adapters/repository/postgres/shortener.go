@@ -211,3 +211,27 @@ func (p ShortenerRepository) DeleteUserURLS(ctx context.Context, items []model.U
 
 	return tx.Commit()
 }
+
+func (p ShortenerRepository) Stats(ctx context.Context) (model.StatsRespose, error) {
+	var (
+		countURLs int
+		countUser int
+	)
+
+	sqlQueryURLs := `select count(id) as countURLs from shortener`
+	row := p.db.QueryRowContext(ctx, sqlQueryURLs)
+	if err := row.Scan(&countURLs); err != nil {
+		countURLs = 0
+	}
+
+	sqlQueryUsers := `select count(DISTINCT user_id) as countUsers from shortener `
+	row = p.db.QueryRowContext(ctx, sqlQueryUsers)
+	if err := row.Scan(&countUser); err != nil {
+		countUser = 0
+	}
+
+	return model.StatsRespose{
+		URLs:  countURLs,
+		Users: countUser,
+	}, nil
+}

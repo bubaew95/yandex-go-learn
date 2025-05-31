@@ -141,3 +141,10 @@ func (s ShortenerRepository) GetURLSByUserID(ctx context.Context, userID string)
 func (s ShortenerRepository) DeleteUserURLS(ctx context.Context, items []model.URLToDelete) error {
 	return nil
 }
+
+func (s ShortenerRepository) Stats(ctx context.Context) (model.StatsRespose, error) {
+	return model.StatsRespose{
+		Users: 0,
+		URLs:  0,
+	}, nil
+}
