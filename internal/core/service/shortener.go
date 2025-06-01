@@ -241,6 +241,7 @@ func (s ShortenerService) Close() {
 	close(s.deleteChan)
 }
 
+// Stats — возвращает статистику по количеству URL и пользователей.
 func (s ShortenerService) Stats(ctx context.Context) (model.StatsRespose, error) {
 	return s.repository.Stats(ctx)
 }

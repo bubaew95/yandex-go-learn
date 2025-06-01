@@ -212,6 +212,7 @@ func (p ShortenerRepository) DeleteUserURLS(ctx context.Context, items []model.U
 	return tx.Commit()
 }
 
+// Stats — возвращает статистику по количеству сокращённых URL и уникальных пользователей.
 func (p ShortenerRepository) Stats(ctx context.Context) (model.StatsRespose, error) {
 	var (
 		countURLs int
