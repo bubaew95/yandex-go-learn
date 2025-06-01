@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/bubaew95/yandex-go-learn/config"
 	"io"
+	"net"
 	"net/http"
 	"strconv"
 
@@ -50,17 +52,22 @@ type ShortenerService interface {
 
 	// Ping проверяет доступность сервиса (например, для liveness-проб).
 	Ping(ctx context.Context) error
+
+	// Stats возвращает статистику
+	Stats(ctx context.Context) (model.StatsRespose, error)
 }
 
 // ShortenerHandler обрабатывает HTTP-запросы, связанные с сокращением URL.
 type ShortenerHandler struct {
 	service ShortenerService
+	config  *config.Config
 }
 
 // NewShortenerHandler возвращает новый экземпляр ShortenerHandler.
-func NewShortenerHandler(s ShortenerService) *ShortenerHandler {
+func NewShortenerHandler(s ShortenerService, cfg config.Config) *ShortenerHandler {
 	return &ShortenerHandler{
 		service: s,
+		config:  &cfg,
 	}
 }
 
@@ -285,4 +292,44 @@ func (s ShortenerHandler) DeleteUserURLS(w http.ResponseWriter, r *http.Request)
 
 	logger.Log.Debug("Urls deleted")
 	w.WriteHeader(http.StatusAccepted)
+}
+
+// Stats - обрабатывает HTTP GET-запрос на получение статистики сервиса.
+//
+// Доступ к эндпоинту разрешён только если IP-адрес клиента из заголовка X-Real-IP
+// принадлежит доверенной подсети, указанной в конфигурации (trusted_subnet).
+//
+// Если trusted_subnet не задан или IP не входит в подсеть — возвращает HTTP 403 Forbidden.
+// В случае ошибки разбора CIDR — возвращает HTTP 500 Internal Server Error.
+// В случае ошибки получения статистики — возвращает HTTP 500 Internal Server Error.
+// При успешном выполнении возвращает HTTP 200 и JSON-объект с числом пользователей и URL.
+func (s ShortenerHandler) Stats(w http.ResponseWriter, r *http.Request) {
+	if s.config.TrustedSubnet == "" {
+		logger.Log.Debug("Empty trusted subnet")
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+
+	_, IPNet, err := net.ParseCIDR(s.config.TrustedSubnet)
+	if err != nil {
+		logger.Log.Debug("Cannot parse CIDR", zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	IP := net.ParseIP(r.Header.Get("X-Real-IP"))
+	if IP == nil || !IPNet.Contains(IP) {
+		logger.Log.Debug("Disallowed")
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+
+	stats, err := s.service.Stats(r.Context())
+	if err != nil {
+		logger.Log.Debug("Error getting stats", zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	writeJSONResponse(w, http.StatusOK, stats)
 }

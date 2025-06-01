@@ -64,7 +64,7 @@ func runApp() error {
 	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
 	shortenerService.Run(ctx, &wg)
 
-	shortenerHandler := handlers.NewShortenerHandler(shortenerService)
+	shortenerHandler := handlers.NewShortenerHandler(shortenerService, *cfg)
 	route := setupRouter(shortenerHandler)
 
 	server := &http.Server{
@@ -144,6 +144,10 @@ func setupRouter(shortenerHandler *handlers.ShortenerHandler) *chi.Mux {
 	route.Route("/api/user", func(r chi.Router) {
 		r.Get("/urls", shortenerHandler.GetUserURLS)
 		r.Delete("/urls", shortenerHandler.DeleteUserURLS)
+	})
+
+	route.Route("/api/internal/stats", func(r chi.Router) {
+		r.Get("/", shortenerHandler.Stats)
 	})
 
 	route.Mount("/debug", chi_middleware.Profiler())

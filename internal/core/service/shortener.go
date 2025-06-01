@@ -42,6 +42,9 @@ type ShortenerRepository interface {
 
 	// Close освобождает ресурсы (например, соединения с БД).
 	Close() error
+
+	// Stats возвращает статистику
+	Stats(ctx context.Context) (model.StatsRespose, error)
 }
 
 // ShortenerService реализует бизнес-логику для сокращения URL.
@@ -236,4 +239,9 @@ func (s ShortenerService) Run(ctx context.Context, wg *sync.WaitGroup) {
 // Close - Закрывает канал
 func (s ShortenerService) Close() {
 	close(s.deleteChan)
+}
+
+// Stats — возвращает статистику по количеству URL и пользователей.
+func (s ShortenerService) Stats(ctx context.Context) (model.StatsRespose, error) {
+	return s.repository.Stats(ctx)
 }
