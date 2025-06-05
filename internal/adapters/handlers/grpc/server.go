@@ -158,7 +158,7 @@ func (s *Server) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 }
 
 func (s *Server) GetUserURLs(ctx context.Context, _ *pb.GetUserURLsRequest) (*pb.GetUserURLsResponse, error) {
-	userID, ok := ctx.Value("userID").(string)
+	userID, ok := ctx.Value(crypto.KeyUserID).(string)
 	if !ok || userID == "" {
 		return nil, status.Error(codes.Unauthenticated, "user id is required")
 	}

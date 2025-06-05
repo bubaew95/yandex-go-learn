@@ -71,7 +71,6 @@ func NewShortenerService(r ShortenerRepository, cfg config.Config) *ShortenerSer
 // GenerateURL генерирует уникальный идентификатор для заданного URL и сохраняет его.
 // Повторяет генерацию, пока не будет найден уникальный ID.
 func (s ShortenerService) GenerateURL(ctx context.Context, url string, randomStringLength int) (string, error) {
-	fmt.Println("ur;", url)
 	if len(url) == 0 {
 		return "", constants.ErrParamsIsEmpty
 	}
