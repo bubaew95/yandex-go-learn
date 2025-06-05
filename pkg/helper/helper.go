@@ -11,6 +11,10 @@ import (
 	"go.uber.org/zap"
 )
 
+type closer interface {
+	Close() error
+}
+
 func InitRepositoryHelper(cfg config.Config) (service.ShortenerRepository, error) {
 	if cfg.DataBaseDSN != "" {
 		shortenerRepository, err := postgres.NewShortenerRepository(cfg)

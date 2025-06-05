@@ -11,7 +11,6 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"net"
-	"net/rpc"
 )
 
 func main() {
@@ -33,10 +32,10 @@ func main() {
 
 	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
 
-	s := grpc.NewServer()
-	pb.RegisterURLShortenerServer(s, &rpcServer.Server{
-		service: shortenerService,
-	})
+	s := grpc.NewServer(
+		grpc.UnaryInterceptor(rpcServer.AuthInterceptor()),
+	)
+	pb.RegisterURLShortenerServer(s, rpcServer.NewServer(shortenerService))
 
 	logger.Log.Info("Run rpc server")
 	if err := s.Serve(listener); err != nil {

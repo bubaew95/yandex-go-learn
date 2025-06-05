@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package shortener;
+
+option go_package = "github.com/bubaew95/yandex-go-learn/internal/proto;proto";
+
+service URLShortener {
+  rpc CreateURL(ShortenRequest) returns(ShortenResponse);
+  rpc GetURL(GetURLRequest) returns (GetURLResponse);
+  rpc Batch(BatchRequest) returns(BatchResponse);
+}
+
+message ShortenRequest {
+  string original_url = 1;
+}
+
+message ShortenResponse {
+  string short_url = 1;
+}
+
+message GetURLRequest {
+  string short_id = 1;
+}
+
+message GetURLResponse {
+  string origin_url = 1;
+}
+
+message URLMappingRequest {
+  string correlation_id = 1;
+  string original_url = 2;
+}
+
+message URLMappingResponse {
+  string correlation_id = 1;
+  string short_url = 2;
+}
+
+message BatchRequest {
+  repeated URLMappingRequest urls = 1;
+}
+
+message BatchResponse {
+  repeated URLMappingResponse urls = 1;
+}
+
+message GetUserURLsRequest {}
+
+message URLPair {
+  string short_url = 1;
+  string original_url = 2;
+}
+
+message GetUserURLsResponse {
+  repeated URLPair urls = 1;
+}

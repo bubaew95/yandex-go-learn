@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/bubaew95/yandex-go-learn/pkg/helper"
 	chi_middleware "github.com/go-chi/chi/v5/middleware"
 	"golang.org/x/crypto/acme/autocert"
 	"net/http"
@@ -18,12 +19,9 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/bubaew95/yandex-go-learn/config"
-	"github.com/bubaew95/yandex-go-learn/internal/adapters/handlers"
-	"github.com/bubaew95/yandex-go-learn/internal/adapters/handlers/middleware"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/handlers/http"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/handlers/http/middleware"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/logger"
-	fileStorage "github.com/bubaew95/yandex-go-learn/internal/adapters/repository/filestorage"
-	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/postgres"
-	"github.com/bubaew95/yandex-go-learn/internal/adapters/storage"
 	"github.com/bubaew95/yandex-go-learn/internal/core/service"
 )
 
@@ -51,11 +49,11 @@ func runApp() error {
 	}
 
 	cfg := config.NewConfig()
-	shortenerRepository, err := initRepository(*cfg)
+	shortenerRepository, err := helper.InitRepositoryHelper(*cfg)
 	if err != nil {
 		return err
 	}
-	defer safeClose(shortenerRepository)
+	defer helper.SafeClose(shortenerRepository)
 
 	var wg sync.WaitGroup
 	ctx, cancel := context.WithCancel(context.Background())
@@ -106,26 +104,6 @@ func runApp() error {
 	return nil
 }
 
-func initRepository(cfg config.Config) (service.ShortenerRepository, error) {
-	if cfg.DataBaseDSN != "" {
-		shortenerRepository, err := postgres.NewShortenerRepository(cfg)
-		if err != nil {
-			logger.Log.Fatal("Database initialization error", zap.Error(err))
-		}
-
-		return shortenerRepository, nil
-	}
-
-	shortenerDB, err := storage.NewShortenerDB(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("database file initialization error: %w", err)
-	}
-
-	shortener, err := fileStorage.NewShortenerRepository(*shortenerDB)
-
-	return shortener, err
-}
-
 func setupRouter(shortenerHandler *handlers.ShortenerHandler) *chi.Mux {
 	route := chi.NewRouter()
 	route.Use(middleware.LoggerMiddleware)
@@ -153,10 +131,4 @@ func setupRouter(shortenerHandler *handlers.ShortenerHandler) *chi.Mux {
 	route.Mount("/debug", chi_middleware.Profiler())
 
 	return route
-}
-
-func safeClose(c closer) {
-	if err := c.Close(); err != nil {
-		logger.Log.Error("Error when closing a resource", zap.Error(err))
-	}
 }
