@@ -328,7 +328,7 @@ func TestGetUserURLs(t *testing.T) {
 	}{
 		{
 			name: "Success",
-			ctx:  context.WithValue(context.Background(), "userID", "encodedUser123"),
+			ctx:  context.WithValue(context.Background(), crypto.KeyUserID, "encodedUser123"),
 			mock: mockData{
 				userID: "encodedUser123",
 				result: []model.ShortenerURLSForUserResponse{
@@ -351,7 +351,7 @@ func TestGetUserURLs(t *testing.T) {
 		},
 		{
 			name: "Repository error",
-			ctx:  context.WithValue(context.Background(), "userID", "errorUser"),
+			ctx:  context.WithValue(context.Background(), crypto.KeyUserID, "errorUser"),
 			mock: mockData{
 				userID: "errorUser",
 				err:    errors.New("db error"),
@@ -362,7 +362,7 @@ func TestGetUserURLs(t *testing.T) {
 		},
 		{
 			name: "Empty URLs",
-			ctx:  context.WithValue(context.Background(), "userID", "emptyUser"),
+			ctx:  context.WithValue(context.Background(), crypto.KeyUserID, "emptyUser"),
 			mock: mockData{
 				userID: "emptyUser",
 				result: []model.ShortenerURLSForUserResponse{},
