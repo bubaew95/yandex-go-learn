@@ -168,7 +168,7 @@ func (s *Server) GetUserURLs(ctx context.Context, _ *pb.GetUserURLsRequest) (*pb
 		return nil, status.Error(codes.Internal, "failed to get user urls")
 	}
 
-	if urls == nil || len(urls) == 0 {
+	if len(urls) == 0 {
 		return nil, status.Error(codes.NotFound, "no urls")
 	}
 

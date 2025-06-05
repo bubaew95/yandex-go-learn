@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/bubaew95/yandex-go-learn/config"
 	rpcServer "github.com/bubaew95/yandex-go-learn/internal/adapters/handlers/grpc"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/logger"
@@ -15,7 +14,7 @@ import (
 
 func main() {
 	if err := logger.Initialize(); err != nil {
-		fmt.Errorf("logging initialization error: %w", err)
+		logger.Log.Fatal("logging initialization error: %w", zap.Error(err))
 	}
 
 	listener, err := net.Listen("tcp", ":3232")
