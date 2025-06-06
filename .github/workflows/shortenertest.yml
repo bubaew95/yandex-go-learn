@@ -54,6 +54,7 @@ jobs:
 
       - name: Coverage tests
         run: |
+          go install github.com/wimspaargaren/go-cover-ignore@latest
           chmod +x ./coverage.sh
           ./coverage.sh
 
