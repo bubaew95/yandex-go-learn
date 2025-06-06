@@ -285,3 +285,21 @@ func TestShortenerService_ScheduleAndRunDeletion(t *testing.T) {
 
 	mockRepo.AssertExpectations(t)
 }
+
+func TestShortenerService_Stats(t *testing.T) {
+	repo := NewMockShortenerRepository(t)
+	service := NewShortenerService(repo, config.Config{})
+
+	expected := model.StatsRespose{
+		Users: 3,
+		URLs:  15,
+	}
+
+	repo.On("Stats", mock.Anything).Return(expected, nil).Once()
+
+	result, err := service.Stats(context.Background())
+	require.NoError(t, err)
+	assert.Equal(t, expected, result)
+
+	repo.AssertExpectations(t)
+}

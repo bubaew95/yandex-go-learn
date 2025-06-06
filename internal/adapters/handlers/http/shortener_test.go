@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 
@@ -19,83 +18,117 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/bubaew95/yandex-go-learn/config"
-	fileStorage "github.com/bubaew95/yandex-go-learn/internal/adapters/repository/filestorage"
-	"github.com/bubaew95/yandex-go-learn/internal/adapters/storage"
 	"github.com/bubaew95/yandex-go-learn/internal/core/model"
-	"github.com/bubaew95/yandex-go-learn/internal/core/service"
 )
 
 func TestHandlerCreate(t *testing.T) {
 	t.Parallel()
 
 	type want struct {
-		contentType string
 		statusCode  int
-		method      string
+		contentType string
+		expectBody  string
 	}
 
 	tests := []struct {
-		name string
-		data string
-		want want
-		err  bool
+		name      string
+		data      string
+		mockSetup func(service *MockShortenerService)
+		want      want
 	}{
 		{
-			name: "Simple url",
-			data: "https://practicum.yandex.ru/",
-			want: want{
-				contentType: "text/plain; charset=utf-8",
-				statusCode:  http.StatusCreated,
-				method:      http.MethodPost,
+			name: "Simple url - Created",
+			data: "https://practicum.yandex.ru",
+			mockSetup: func(service *MockShortenerService) {
+				service.On("GenerateURL", mock.Anything, "https://practicum.yandex.ru", mock.Anything).
+					Return("http://localhost:8080/abc123", nil).
+					Once()
 			},
-			err: false,
+			want: want{
+				statusCode:  http.StatusCreated,
+				contentType: "text/plain; charset=utf-8",
+				expectBody:  "http://localhost:8080/abc123",
+			},
 		},
 		{
-			name: "Data is empty",
+			name: "Empty body - Bad Request",
 			data: "",
-			want: want{
-				contentType: "text/plain; charset=utf-8",
-				statusCode:  http.StatusBadRequest,
-				method:      http.MethodPost,
+			mockSetup: func(service *MockShortenerService) {
+				// Ничего не вызывается
 			},
+			want: want{
+				statusCode:  http.StatusBadRequest,
+				contentType: "",
+			},
+		},
+		{
+			name: "Duplicate URL - Conflict",
+			data: "https://duplicate.example.com",
+			mockSetup: func(service *MockShortenerService) {
+				service.On("GenerateURL", mock.Anything, "https://duplicate.example.com", mock.Anything).
+					Return("", constants.ErrUniqueIndex).
+					Once()
 
-			err: true,
+				service.On("GetURLByOriginalURL", mock.Anything, "https://duplicate.example.com").
+					Return("http://localhost:8080/dupl123", true).
+					Once()
+			},
+			want: want{
+				statusCode:  http.StatusConflict,
+				contentType: "text/plain; charset=utf-8",
+				expectBody:  "http://localhost:8080/dupl123",
+			},
+		},
+		{
+			name: "Internal error - Generate fails",
+			data: "https://fail.example.com",
+			mockSetup: func(service *MockShortenerService) {
+				service.On("GenerateURL", mock.Anything, "https://fail.example.com", mock.Anything).
+					Return("", errors.New("internal error")).
+					Once()
+			},
+			want: want{
+				statusCode:  http.StatusInternalServerError,
+				contentType: "",
+			},
 		},
 	}
 
 	cfg := config.NewConfig()
 
-	shortenerDB, _ := storage.NewShortenerDB(*cfg)
-	shortenerRepository, err := fileStorage.NewShortenerRepository(*shortenerDB)
-	require.NoError(t, err)
-
-	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
-	shortenerHandler := NewShortenerHandler(shortenerService, *cfg)
-
-	route := chi.NewRouter()
-	route.Post("/", shortenerHandler.CreateURL)
-
-	ts := httptest.NewServer(route)
-	defer ts.Close()
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req, err := http.NewRequest("POST", ts.URL, strings.NewReader(tt.data))
+			shortenerService := NewMockShortenerService(t)
+			if tt.mockSetup != nil {
+				tt.mockSetup(shortenerService)
+			}
+
+			handler := NewShortenerHandler(shortenerService, *cfg)
+
+			r := chi.NewRouter()
+			r.Post("/", handler.CreateURL)
+
+			ts := httptest.NewServer(r)
+			defer ts.Close()
+
+			req, err := http.NewRequest(http.MethodPost, ts.URL, strings.NewReader(tt.data))
 			require.NoError(t, err)
 
 			resp, err := ts.Client().Do(req)
 			require.NoError(t, err)
 			defer resp.Body.Close()
 
-			respBody, err := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 
-			assert.Equal(t, resp.StatusCode, tt.want.statusCode)
+			assert.Equal(t, tt.want.statusCode, resp.StatusCode)
+			assert.Equal(t, tt.want.contentType, resp.Header.Get("Content-Type"))
 
-			if false == tt.err {
-				assert.Equal(t, resp.Header.Get("content-type"), tt.want.contentType)
-				assert.Equal(t, respBody, respBody)
+			if tt.want.expectBody != "" {
+				assert.Equal(t, tt.want.expectBody, string(body))
 			}
+
+			shortenerService.AssertExpectations(t)
 		})
 	}
 }
@@ -104,34 +137,63 @@ func TestHandlerGet(t *testing.T) {
 	t.Parallel()
 
 	type want struct {
-		contentType string
-		statusCode  int
-		location    string
+		statusCode int
+		location   string
 	}
 
 	tests := []struct {
-		name string
-		url  string
-		data map[string]string
-		want want
-		err  bool
+		name       string
+		requestURL string
+		mockSetup  func(service *MockShortenerService)
+		want       want
 	}{
 		{
-			name: "Simple test",
-			url:  "/WzYAhS",
+			name:       "Found URL - 302 Redirect",
+			requestURL: "/abc123",
+			mockSetup: func(service *MockShortenerService) {
+				service.On("GetURLByID", mock.Anything, "abc123").
+					Return("https://practicum.yandex.ru/", nil).
+					Once()
+			},
 			want: want{
-				contentType: "text/html; charset=utf-8",
-				statusCode:  http.StatusTemporaryRedirect,
-				location:    "https://practicum.yandex.ru/",
+				statusCode: http.StatusOK,
+				location:   "",
 			},
 		},
 		{
-			name: "Bad request test",
-			url:  "/WzYAhSs",
+			name:       "Deleted URL - 410 Gone",
+			requestURL: "/deleted123",
+			mockSetup: func(service *MockShortenerService) {
+				service.On("GetURLByID", mock.Anything, "deleted123").
+					Return("", constants.ErrIsDeleted).
+					Once()
+			},
 			want: want{
-				contentType: "text/html; charset=utf-8",
-				statusCode:  http.StatusBadRequest,
-				location:    "https://practicum.yandex.ru/learn",
+				statusCode: http.StatusGone,
+			},
+		},
+		{
+			name:       "Not found - 404 Not Found",
+			requestURL: "/notfound",
+			mockSetup: func(service *MockShortenerService) {
+				service.On("GetURLByID", mock.Anything, "notfound").
+					Return("", nil).
+					Once()
+			},
+			want: want{
+				statusCode: http.StatusNotFound,
+			},
+		},
+		{
+			name:       "Error from service - 404 Not Found",
+			requestURL: "/errorcase",
+			mockSetup: func(service *MockShortenerService) {
+				service.On("GetURLByID", mock.Anything, "errorcase").
+					Return("", errors.New("some error")).
+					Once()
+			},
+			want: want{
+				statusCode: http.StatusNotFound,
 			},
 		},
 	}
@@ -139,46 +201,37 @@ func TestHandlerGet(t *testing.T) {
 	cfg := &config.Config{
 		ServerAddress: "9090",
 		BaseURL:       "http://test.local",
-		FilePath:      "data.json",
+		FilePath:      "mock.json",
 	}
-
-	shortenerDB, _ := storage.NewShortenerDB(*cfg)
-	defer os.Remove(cfg.FilePath)
-
-	shortenerDB.Save(&model.ShortenURL{
-		UUID:        1,
-		ShortURL:    "WzYAhS",
-		OriginalURL: "https://practicum.yandex.ru/learn",
-	})
-	shortenerDB.Save(&model.ShortenURL{
-		UUID:        2,
-		ShortURL:    "WzYAhSs",
-		OriginalURL: "https://practicum.yandex.ru/learn",
-	})
-
-	shortenerRepository, err := fileStorage.NewShortenerRepository(*shortenerDB)
-	require.NoError(t, err)
-
-	shortenerService := service.NewShortenerService(shortenerRepository, *cfg)
-	shortenerHandler := NewShortenerHandler(shortenerService, *cfg)
-
-	route := chi.NewRouter()
-	route.Get("/{id}", shortenerHandler.GetURL)
-
-	ts := httptest.NewServer(route)
-	defer ts.Close()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resp, err := http.Get(ts.URL + tt.url)
+			mockService := NewMockShortenerService(t)
+			if tt.mockSetup != nil {
+				tt.mockSetup(mockService)
+			}
+
+			handler := NewShortenerHandler(mockService, *cfg)
+
+			router := chi.NewRouter()
+			router.Get("/{id}", handler.GetURL)
+
+			ts := httptest.NewServer(router)
+			defer ts.Close()
+
+			resp, err := http.Get(ts.URL + tt.requestURL)
 			require.NoError(t, err)
 			defer resp.Body.Close()
 
-			respBody, err := io.ReadAll(resp.Body)
-			require.NoError(t, err)
+			assert.Equal(t, tt.want.statusCode, resp.StatusCode)
 
-			assert.NotEmpty(t, respBody)
-			assert.NotEmpty(t, resp.Header.Get("content-type"))
+			if tt.want.statusCode == http.StatusTemporaryRedirect {
+				assert.Equal(t, tt.want.location, resp.Header.Get("Location"))
+			} else {
+				assert.Empty(t, resp.Header.Get("Location"))
+			}
+
+			mockService.AssertExpectations(t)
 		})
 	}
 }
@@ -570,35 +623,63 @@ func TestShortenerHandler_DeleteUserURLS(t *testing.T) {
 	}
 }
 
-func TestShortenerHandler_Stats(t *testing.T) {
+func TestHandlerStats(t *testing.T) {
 	t.Parallel()
 
-	tests := []struct {
+	type testCase struct {
 		name          string
-		ip            string
 		trustedSubnet string
-		status        int
-		err           bool
-	}{
+		ipHeader      string
+		expectedCode  int
+		setupMock     func(service *MockShortenerService)
+		expectBody    *model.StatsRespose
+	}
+
+	tests := []testCase{
 		{
-			name:          "Simple",
-			ip:            "127.0.0.1",
+			name:          "OK — allowed IP in subnet",
 			trustedSubnet: "127.0.0.1/32",
-			status:        http.StatusOK,
+			ipHeader:      "127.0.0.1",
+			expectedCode:  http.StatusOK,
+			setupMock: func(service *MockShortenerService) {
+				service.On("Stats", mock.Anything).
+					Return(model.StatsRespose{Users: 5, URLs: 10}, nil).Once()
+			},
+			expectBody: &model.StatsRespose{Users: 5, URLs: 10},
 		},
 		{
-			name:          "Not trusted subnet",
-			ip:            "127.0.0.1",
+			name:          "Forbidden — empty TrustedSubnet",
 			trustedSubnet: "",
-			status:        http.StatusForbidden,
-			err:           true,
+			ipHeader:      "127.0.0.1",
+			expectedCode:  http.StatusForbidden,
 		},
 		{
-			name:          "IP disallowed",
-			ip:            "192.168.0.1",
+			name:          "Internal error — invalid CIDR",
+			trustedSubnet: "invalid-cidr",
+			ipHeader:      "127.0.0.1",
+			expectedCode:  http.StatusInternalServerError,
+		},
+		{
+			name:          "Forbidden — IP not in subnet",
 			trustedSubnet: "127.0.0.1/32",
-			status:        http.StatusForbidden,
-			err:           true,
+			ipHeader:      "192.168.0.1",
+			expectedCode:  http.StatusForbidden,
+		},
+		{
+			name:          "Forbidden — missing IP header",
+			trustedSubnet: "127.0.0.1/32",
+			ipHeader:      "",
+			expectedCode:  http.StatusForbidden,
+		},
+		{
+			name:          "Internal error — Stats() fails",
+			trustedSubnet: "127.0.0.1/32",
+			ipHeader:      "127.0.0.1",
+			expectedCode:  http.StatusInternalServerError,
+			setupMock: func(service *MockShortenerService) {
+				service.On("Stats", mock.Anything).
+					Return(model.StatsRespose{}, errors.New("db error")).Once()
+			},
 		},
 	}
 
@@ -609,12 +690,12 @@ func TestShortenerHandler_Stats(t *testing.T) {
 			}
 
 			mockService := NewMockShortenerService(t)
-			handler := NewShortenerHandler(mockService, *cfg)
 
-			if !tt.err {
-				mockService.On("Stats", mock.Anything).
-					Return(model.StatsRespose{Users: 1, URLs: 2}, nil).Once()
+			if tt.setupMock != nil {
+				tt.setupMock(mockService)
 			}
+
+			handler := NewShortenerHandler(mockService, *cfg)
 
 			router := chi.NewRouter()
 			router.Get("/api/internal/stats", handler.Stats)
@@ -624,14 +705,76 @@ func TestShortenerHandler_Stats(t *testing.T) {
 
 			req, err := http.NewRequest(http.MethodGet, ts.URL+"/api/internal/stats", nil)
 			require.NoError(t, err)
+			if tt.ipHeader != "" {
+				req.Header.Set("X-Real-IP", tt.ipHeader)
+			}
 
-			req.Header.Set("X-Real-IP", tt.ip)
 			resp, err := ts.Client().Do(req)
 			require.NoError(t, err)
-
 			defer resp.Body.Close()
 
-			assert.Equal(t, tt.status, resp.StatusCode)
+			assert.Equal(t, tt.expectedCode, resp.StatusCode)
+
+			if tt.expectedCode == http.StatusOK && tt.expectBody != nil {
+				var result model.StatsRespose
+				err := json.NewDecoder(resp.Body).Decode(&result)
+				require.NoError(t, err)
+				assert.Equal(t, *tt.expectBody, result)
+			} else {
+				body, _ := io.ReadAll(resp.Body)
+				assert.Empty(t, string(body)) // тело пустое при ошибках
+			}
+
+			mockService.AssertExpectations(t)
+		})
+	}
+}
+
+func TestHandlerPing(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name      string
+		mockError error
+		wantCode  int
+	}{
+		{
+			name:      "Ping success",
+			mockError: nil,
+			wantCode:  http.StatusOK,
+		},
+		{
+			name:      "Ping failure",
+			mockError: errors.New("db unavailable"),
+			wantCode:  http.StatusInternalServerError,
+		},
+	}
+
+	cfg := &config.Config{
+		ServerAddress: "9090",
+		BaseURL:       "http://test.local",
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockService := NewMockShortenerService(t)
+			mockService.On("Ping", mock.Anything).Return(tt.mockError).Once()
+
+			handler := NewShortenerHandler(mockService, *cfg)
+
+			r := chi.NewRouter()
+			r.Get("/ping", handler.Ping)
+
+			ts := httptest.NewServer(r)
+			defer ts.Close()
+
+			resp, err := http.Get(ts.URL + "/ping")
+			require.NoError(t, err)
+			defer resp.Body.Close()
+
+			assert.Equal(t, tt.wantCode, resp.StatusCode)
+
+			mockService.AssertExpectations(t)
 		})
 	}
 }
