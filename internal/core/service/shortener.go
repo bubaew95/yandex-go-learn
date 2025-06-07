@@ -5,6 +5,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/constants"
 	"math/rand"
 	"strings"
 	"sync"
@@ -42,6 +43,9 @@ type ShortenerRepository interface {
 
 	// Close освобождает ресурсы (например, соединения с БД).
 	Close() error
+
+	// Stats возвращает статистику
+	Stats(ctx context.Context) (model.StatsRespose, error)
 }
 
 // ShortenerService реализует бизнес-логику для сокращения URL.
@@ -67,6 +71,10 @@ func NewShortenerService(r ShortenerRepository, cfg config.Config) *ShortenerSer
 // GenerateURL генерирует уникальный идентификатор для заданного URL и сохраняет его.
 // Повторяет генерацию, пока не будет найден уникальный ID.
 func (s ShortenerService) GenerateURL(ctx context.Context, url string, randomStringLength int) (string, error) {
+	if len(url) == 0 {
+		return "", constants.ErrParamsIsEmpty
+	}
+
 	s.mx.Lock()
 	defer s.mx.Unlock()
 
@@ -236,4 +244,9 @@ func (s ShortenerService) Run(ctx context.Context, wg *sync.WaitGroup) {
 // Close - Закрывает канал
 func (s ShortenerService) Close() {
 	close(s.deleteChan)
+}
+
+// Stats — возвращает статистику по количеству URL и пользователей.
+func (s ShortenerService) Stats(ctx context.Context) (model.StatsRespose, error) {
+	return s.repository.Stats(ctx)
 }

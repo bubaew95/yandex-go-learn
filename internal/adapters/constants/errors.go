@@ -4,6 +4,8 @@ import "errors"
 
 // Ошибки.
 var (
-	ErrUniqueIndex = errors.New("url already exists") // Такой url уже существует
-	ErrIsDeleted   = errors.New("url is deleted")     // Url удален
+	ErrUniqueIndex      = errors.New("url already exists") // Такой url уже существует
+	ErrIsDeleted        = errors.New("url is deleted")     // Url удален
+	ErrNotTrustedSubnet = errors.New("not trusted subnet")
+	ErrParamsIsEmpty    = errors.New("params is empty")
 )
