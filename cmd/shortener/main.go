@@ -2,25 +2,20 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"github.com/bubaew95/yandex-go-learn/pkg/helper"
-	chi_middleware "github.com/go-chi/chi/v5/middleware"
-	"golang.org/x/crypto/acme/autocert"
-	"net/http"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/app"
+	fileStorage "github.com/bubaew95/yandex-go-learn/internal/adapters/repository/filestorage"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/repository/postgres"
+	"github.com/bubaew95/yandex-go-learn/internal/adapters/storage"
+	"go.uber.org/zap"
 	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
-	"time"
-
-	"github.com/go-chi/chi/v5"
-	"go.uber.org/zap"
 
 	"github.com/bubaew95/yandex-go-learn/config"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/handlers/http"
-	"github.com/bubaew95/yandex-go-learn/internal/adapters/handlers/http/middleware"
 	"github.com/bubaew95/yandex-go-learn/internal/adapters/logger"
 	"github.com/bubaew95/yandex-go-learn/internal/core/service"
 )
@@ -49,11 +44,11 @@ func runApp() error {
 	}
 
 	cfg := config.NewConfig()
-	shortenerRepository, err := helper.InitRepositoryHelper(*cfg)
+	shortenerRepository, err := initRepositoryHelper(*cfg)
 	if err != nil {
 		return err
 	}
-	defer helper.SafeClose(shortenerRepository)
+	defer safeClose(shortenerRepository)
 
 	var wg sync.WaitGroup
 	ctx, cancel := context.WithCancel(context.Background())
@@ -63,72 +58,43 @@ func runApp() error {
 	shortenerService.Run(ctx, &wg)
 
 	shortenerHandler := handlers.NewShortenerHandler(shortenerService, *cfg)
-	route := setupRouter(shortenerHandler)
 
-	server := &http.Server{
-		Addr:    cfg.ServerAddress,
-		Handler: route,
-	}
-
-	if cfg.EnableHTTPS {
-		logger.Log.Info("Running https server", zap.String("port", cfg.ServerAddress))
-		go func() {
-			if err := server.Serve(autocert.NewListener("example.com")); err != nil {
-				logger.Log.Error("Failed to start https(tsl) server", zap.Error(err))
-			}
-		}()
-	} else {
-		logger.Log.Info("Running server", zap.String("ports", cfg.ServerAddress))
-		go func() {
-			if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-				logger.Log.Error("Failed to start http server", zap.Error(err))
-			}
-		}()
-	}
+	app := app.NewApp(cfg, *shortenerHandler, shortenerRepository)
+	app.Run()
 
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 	<-ch
 
-	shutdownCtx, cancelShutdown := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancelShutdown()
-
-	logger.Log.Info("Shutting down...")
-	if err := server.Shutdown(shutdownCtx); err != nil {
-		logger.Log.Info("Http server shutdown error", zap.Error(err))
-	}
+	app.Stop()
 
 	shortenerService.Close()
-
 	wg.Wait()
 	return nil
 }
 
-func setupRouter(shortenerHandler *handlers.ShortenerHandler) *chi.Mux {
-	route := chi.NewRouter()
-	route.Use(middleware.LoggerMiddleware)
-	route.Use(middleware.GZipMiddleware)
-	route.Use(middleware.CookieMiddleware)
+func initRepositoryHelper(cfg config.Config) (service.ShortenerRepository, error) {
+	if cfg.DataBaseDSN != "" {
+		shortenerRepository, err := postgres.NewShortenerRepository(cfg)
+		if err != nil {
+			logger.Log.Fatal("Database initialization error", zap.Error(err))
+		}
 
-	route.Post("/", shortenerHandler.CreateURL)
-	route.Get("/{id}", shortenerHandler.GetURL)
-	route.Get("/ping", shortenerHandler.Ping)
+		return shortenerRepository, nil
+	}
 
-	route.Route("/api/shorten", func(r chi.Router) {
-		r.Post("/", shortenerHandler.AddNewURL)
-		r.Post("/batch", shortenerHandler.Batch)
-	})
+	shortenerDB, err := storage.NewShortenerDB(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("database file initialization error: %w", err)
+	}
 
-	route.Route("/api/user", func(r chi.Router) {
-		r.Get("/urls", shortenerHandler.GetUserURLS)
-		r.Delete("/urls", shortenerHandler.DeleteUserURLS)
-	})
+	shortener, err := fileStorage.NewShortenerRepository(*shortenerDB)
 
-	route.Route("/api/internal/stats", func(r chi.Router) {
-		r.Get("/", shortenerHandler.Stats)
-	})
+	return shortener, err
+}
 
-	route.Mount("/debug", chi_middleware.Profiler())
-
-	return route
+func safeClose(c closer) {
+	if err := c.Close(); err != nil {
+		logger.Log.Error("Error when closing a resource", zap.Error(err))
+	}
 }

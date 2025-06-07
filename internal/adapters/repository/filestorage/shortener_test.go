@@ -177,3 +177,18 @@ func TestShortenerRepository_NotImplemented(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, urls)
 }
+
+func TestShortenerRepository_Stats(t *testing.T) {
+	file := createTempStorageFile(t)
+	cfg := config.Config{FilePath: file}
+	db, err := storage.NewShortenerDB(cfg)
+	require.NoError(t, err)
+
+	repo, err := NewShortenerRepository(*db)
+	require.NoError(t, err)
+
+	stats, err := repo.Stats(context.Background())
+	require.NoError(t, err)
+
+	assert.Equal(t, 0, stats.Users)
+}

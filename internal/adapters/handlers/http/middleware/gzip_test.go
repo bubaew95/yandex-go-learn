@@ -3,14 +3,23 @@ package middleware
 import (
 	"bytes"
 	"compress/gzip"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+type brokenReader struct{}
+
+func (b *brokenReader) Read(_ []byte) (int, error) {
+	return 0, errors.New("broken read")
+}
+func (b *brokenReader) Close() error { return nil }
 
 func TestGZipMiddleware(t *testing.T) {
 	t.Run("decompress gzip request and compress gzip response", func(t *testing.T) {
@@ -61,7 +70,7 @@ func TestGZipMiddleware(t *testing.T) {
 			w.Write([]byte("plain response"))
 		}))
 
-		req := httptest.NewRequest(http.MethodPost, "/", bytes.NewBufferString("plain text"))
+		req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader("plain text"))
 		req.Header.Set("Content-Type", "application/json")
 
 		rec := httptest.NewRecorder()
@@ -76,5 +85,22 @@ func TestGZipMiddleware(t *testing.T) {
 		respBody, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 		assert.Equal(t, "plain response", string(respBody))
+	})
+
+	t.Run("broken gzip input — return 500", func(t *testing.T) {
+		handler := GZipMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			t.Fatal("handler must not be called")
+		}))
+
+		req := httptest.NewRequest(http.MethodPost, "/", &brokenReader{})
+		req.Header.Set("Content-Encoding", "gzip")
+
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+
+		resp := rec.Result()
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 	})
 }

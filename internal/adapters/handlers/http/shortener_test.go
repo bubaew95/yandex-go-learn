@@ -351,75 +351,103 @@ func TestHandlerBatch(t *testing.T) {
 		data    string
 		want    want
 		isError bool
+		mockErr bool
 	}{
 		{
 			name: "Add urls success",
-			data: `[ { "correlation_id": "test-1", "original_url": "http://google.com" }, { "correlation_id": "test-2", "original_url": "http://yandex.ru" }, { "correlation_id": "test-3", "original_url": "http://yandex.ru" } ]`,
+			data: `[{"correlation_id":"test-1","original_url":"http://google.com"},
+			        {"correlation_id":"test-2","original_url":"http://yandex.ru"},
+			        {"correlation_id":"test-3","original_url":"http://yandex.ru"}]`,
 			want: want{
 				status: http.StatusCreated,
-				result: `[ { "correlation_id": "test-1", "short_url": "https://site.local/test-1" }, { "correlation_id": "test-2", "short_url": "https://site.local/test-2" }, { "correlation_id": "test-3", "short_url": "https://site.local/test-3" } ]`,
+				result: `[{"correlation_id":"test-1","short_url":"https://site.local/test-1"},
+				          {"correlation_id":"test-2","short_url":"https://site.local/test-2"},
+				          {"correlation_id":"test-3","short_url":"https://site.local/test-3"}]`,
 			},
-			isError: false,
 		},
 		{
-			name: "Dublicate CorrelationId",
-			data: `[{ "correlation_id": "test-1", "original_url": "http://google.com" }, { "correlation_id": "test-1", "original_url": "http://yandex.ru" }]`,
+			name: "Duplicate CorrelationId",
+			data: `[{"correlation_id":"test-1","original_url":"http://google.com"},
+			        {"correlation_id":"test-1","original_url":"http://yandex.ru"}]`,
 			want: want{
 				status: http.StatusCreated,
-				result: `[{ "correlation_id": "test-1", "short_url": "https://site.local/test-1" }, { "correlation_id": "test-1", "short_url": "https://site.local/test-1" }]`,
+				result: `[{"correlation_id":"test-1","short_url":"https://site.local/test-1"},
+				          {"correlation_id":"test-1","short_url":"https://site.local/test-1"}]`,
 			},
-			isError: false,
 		},
 		{
-			name: "Invalidate json",
+			name: "Invalid JSON",
 			data: `[{ "test-1", "original_url": "http://google.com" }]`,
 			want: want{
 				status: http.StatusInternalServerError,
-				result: ``,
 			},
 			isError: true,
 		},
+		{
+			name: "InsertURLs returns error",
+			data: `[{"correlation_id":"test-1","original_url":"http://google.com"}]`,
+			want: want{
+				status: http.StatusInternalServerError,
+			},
+			mockErr: true,
+		},
+		{
+			name: "Skip empty correlation_id or original_url",
+			data: `[{"correlation_id":"test-1","original_url":"http://google.com"},
+			        {"correlation_id":"","original_url":"http://skip.ru"},
+			        {"correlation_id":"test-2","original_url":""}]`,
+			want: want{
+				status: http.StatusCreated,
+				result: `[{"correlation_id":"test-1","short_url":"https://site.local/test-1"}]`,
+			},
+		},
 	}
 
-	cfg := &config.Config{}
-	shortenerService := NewMockShortenerService(t)
-	shortenerHandler := NewShortenerHandler(shortenerService, *cfg)
-
-	router := chi.NewRouter()
-	router.Post("/api/shorten/batch", shortenerHandler.Batch)
-
-	ts := httptest.NewServer(router)
-	defer ts.Close()
+	cfg := &config.Config{BaseURL: "https://site.local"}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			shortenerService := NewMockShortenerService(t)
+			handler := NewShortenerHandler(shortenerService, *cfg)
+
 			if !tt.isError {
-				var items []model.ShortenerURLMapping
-				err := json.Unmarshal([]byte(tt.data), &items)
+				var inputItems []model.ShortenerURLMapping
+				err := json.Unmarshal([]byte(tt.data), &inputItems)
 				require.NoError(t, err)
 
-				var respItems []model.ShortenerURLResponse
-				for _, item := range items {
-					respItems = append(respItems, model.ShortenerURLResponse{
-						CorrelationID: item.CorrelationID,
-						ShortURL:      "https://site.local/" + item.CorrelationID,
-					})
+				if tt.mockErr {
+					shortenerService.On("InsertURLs", mock.Anything, inputItems).
+						Return(nil, errors.New("batch insert error")).Once()
+				} else {
+					var filtered []model.ShortenerURLResponse
+					for _, item := range inputItems {
+						if item.CorrelationID != "" && item.OriginalURL != "" {
+							filtered = append(filtered, model.ShortenerURLResponse{
+								CorrelationID: item.CorrelationID,
+								ShortURL:      cfg.BaseURL + "/" + item.CorrelationID,
+							})
+						}
+					}
+					shortenerService.On("InsertURLs", mock.Anything, inputItems).
+						Return(filtered, nil).Once()
 				}
-
-				shortenerService.On("InsertURLs", mock.Anything, items).
-					Return(respItems, nil)
 			}
 
-			req, err := http.Post(ts.URL+"/api/shorten/batch", "application/json", strings.NewReader(tt.data))
-			require.NoError(t, err)
-			defer req.Body.Close()
+			router := chi.NewRouter()
+			router.Post("/api/shorten/batch", handler.Batch)
+			ts := httptest.NewServer(router)
+			defer ts.Close()
 
-			respBody, err := io.ReadAll(req.Body)
+			resp, err := http.Post(ts.URL+"/api/shorten/batch", "application/json", strings.NewReader(tt.data))
+			require.NoError(t, err)
+			defer resp.Body.Close()
+
+			body, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 
-			assert.Equal(t, tt.want.status, req.StatusCode)
+			assert.Equal(t, tt.want.status, resp.StatusCode)
 			if tt.want.result != "" {
-				assert.JSONEq(t, tt.want.result, string(respBody))
+				assert.JSONEq(t, tt.want.result, string(body))
 			}
 		})
 	}

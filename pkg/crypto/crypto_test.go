@@ -1,6 +1,7 @@
 package crypto
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -55,5 +56,60 @@ func BenchmarkEncodeUserID(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			EncodeUserIDRSA("test")
 		}
+	})
+}
+
+func TestIsInvalidUserID(t *testing.T) {
+	t.Run("Valid signed cookie", func(t *testing.T) {
+		userID := GenerateUserID()
+
+		encoded, err := EncodeUserID(userID)
+		require.NoError(t, err)
+
+		cookie := &http.Cookie{
+			Name:  "user_id",
+			Value: encoded,
+		}
+
+		isInvalid := IsInvalidUserID(cookie)
+		assert.True(t, isInvalid)
+	})
+
+	t.Run("Tampered cookie (invalid signature)", func(t *testing.T) {
+		userID := GenerateUserID()
+
+		encoded, err := EncodeUserID(userID)
+		require.NoError(t, err)
+
+		// Подделываем cookie: меняем подпись
+		tampered := encoded + "tampered"
+
+		cookie := &http.Cookie{
+			Name:  "user_id",
+			Value: tampered,
+		}
+
+		isInvalid := IsInvalidUserID(cookie)
+		assert.True(t, isInvalid, "tampered cookie must be marked invalid")
+	})
+
+	t.Run("Corrupted cookie value", func(t *testing.T) {
+		cookie := &http.Cookie{
+			Name:  "user_id",
+			Value: "%%%invalid%%%base64%%%==",
+		}
+
+		isInvalid := IsInvalidUserID(cookie)
+		assert.True(t, isInvalid, "corrupted cookie must be marked invalid")
+	})
+
+	t.Run("Empty cookie value", func(t *testing.T) {
+		cookie := &http.Cookie{
+			Name:  "user_id",
+			Value: "",
+		}
+
+		isInvalid := IsInvalidUserID(cookie)
+		assert.False(t, isInvalid, "empty cookie must be marked invalid")
 	})
 }

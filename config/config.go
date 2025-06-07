@@ -31,6 +31,12 @@ type Config struct {
 
 	// TrustedSubnet Строковое представление бесклассовой адресации (CIDR)
 	TrustedSubnet string `json:"trusted_subnet"`
+
+	// EnableHTTP запуск http
+	ListenHTTP bool `json:"listen_http"`
+
+	// EnableGRPC запуск grpc
+	ListenGRPC bool `json:"listen_grpc"`
 }
 
 // NewConfig создает и возвращает структуру конфигурации Config,
@@ -46,6 +52,8 @@ func NewConfig() *Config {
 	databaseDSN := flag.String("d", "", "Строка подключения к базе данных")
 	enableHTTPS := flag.Bool("s", false, "Включить HTTPS")
 	trustedSubnet := flag.String("t", "", "Строковое представление бесклассовой адресации")
+	listenHTTP := flag.Bool("enable-http", true, "Включить запуск HTTP")
+	listenGRPC := flag.Bool("enable-grpc", false, "Включить запуск GRPC")
 
 	flag.StringVar(&fileConfigPath, "c", "", "Путь к JSON файлу конфигурации")
 	flag.StringVar(&fileConfigPath, "config", "", "Путь к JSON файлу конфигурации")
@@ -82,6 +90,28 @@ func NewConfig() *Config {
 		enbHTTPS, err := strconv.ParseBool(envEnableHTTPS)
 		if err == nil {
 			config.EnableHTTPS = enbHTTPS
+		}
+	}
+
+	if *listenHTTP {
+		config.ListenHTTP = *listenHTTP
+	}
+
+	if envListenHTTP := os.Getenv("LISTEN_HTTP"); envListenHTTP != "" {
+		listenHTTP, err := strconv.ParseBool(envListenHTTP)
+		if err == nil {
+			config.ListenHTTP = listenHTTP
+		}
+	}
+
+	if *listenGRPC {
+		config.ListenGRPC = *listenGRPC
+	}
+
+	if envListenGRPC := os.Getenv("LISTEN_GRPC"); envListenGRPC != "" {
+		listenGRPC, err := strconv.ParseBool(envListenGRPC)
+		if err == nil {
+			config.ListenGRPC = listenGRPC
 		}
 	}
 
